@@ -97,9 +97,9 @@ class SwarmOrchestrator:
         return {
             "status": "SUCCESS", "task_id": task_id, "team_size": team_plan["team_size"],
             "estimated_cost": team_plan["cost_estimation"]["total_cost_usd"], "budget_remaining": budget_usd,
-            "team_details": [f"Agent {a['agent_id']} ({a['specialization']}) | Truora Score: {a['trust_score']}/100 | Rate: \${a['hourly_rate_usd']}/hr | Data Source: {a.get('data_source', 'UNKNOWN')}" for a in team_plan["team"]],
+            "team_details": [f"Agent {a['agent_id']} ({a['specialization']}) | Truora Score: {a['trust_score']}/100 | Rate: ${a['hourly_rate_usd']}/hr | Data Source: {a.get('data_source', 'UNKNOWN')}" for a in team_plan["team"]],
             "score_breakdowns": [{a['agent_id']: a.get('score_breakdown', {})} for a in team_plan["team"]],
-            "message": f"Autonomous workforce deployed. SwarmGuard has now managed {self.swarm_memory['completed_projects']} projects totaling \${self.swarm_memory['total_budget_managed']:,.0f} USDT.",
+            "message": f"Autonomous workforce deployed. SwarmGuard has now managed {self.swarm_memory['completed_projects']} projects totaling ${self.swarm_memory['total_budget_managed']:,.0f} USDT.",
             "next_step": "Call 'evaluate_and_heal_milestone' with task_id and deliverable_summary."
         }
 
@@ -122,12 +122,12 @@ class SwarmOrchestrator:
             task["budget_remaining"] -= payment
             log_entry += f"\n✅ PASS: Objective criteria met."
             log_entry += f"\n💰 PAYMENT: Released {payment} USDT to Agent {current_agent['agent_id']}. Performance bond returned."
-            log_entry += f"\n💼 BUDGET: \${task['budget_original']} → \${task['budget_remaining']} USDT."
+            log_entry += f"\n💼 BUDGET: ${task['budget_original']} → ${task['budget_remaining']} USDT."
             task["current_milestone"] += 1
             if task["current_milestone"] >= len(task["team"]):
                 task["status"] = "COMPLETED"
                 log_entry += "\n🎉 SWARM MISSION ACCOMPLISHED. All milestones verified."
-                log_entry += f"\n📊 FINAL STATS: Budget utilized: \${task['budget_original'] - task['budget_remaining']} / \${task['budget_original']}"
+                log_entry += f"\n📊 FINAL STATS: Budget utilized: ${task['budget_original'] - task['budget_remaining']} / ${task['budget_original']}"
         else:
             reputation_penalty = 5
             original_score = current_agent["trust_score"]
@@ -142,7 +142,7 @@ class SwarmOrchestrator:
             
             log_entry += f"\n❌ FAIL: Objective criteria not met."
             log_entry += f"\n⚖️ PENALTY: 5 OKB performance bond forfeited to client escrow (Demo Simulation)."
-            log_entry += f"\n💰 REFUND: \${bond_forfeited * 100} USDT returned to budget from forfeited bond."
+            log_entry += f"\n💰 REFUND: ${bond_forfeited * 100} USDT returned to budget from forfeited bond."
             log_entry += f"\n📉 REPUTATION: Agent {agent_identifier}'s Truora score: {original_score} → {current_agent['trust_score']}/100."
             
             lesson = f"LESSON: Agent {agent_identifier} failed {current_agent['specialization']} - {deliverable_summary[:50]}..."
