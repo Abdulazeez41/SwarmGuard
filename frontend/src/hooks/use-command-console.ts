@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { swarmguardApi } from "@/lib/api/swarmguard";
 import { commandExample } from "@/lib/mock-data";
 import { CommandAnalysisResponse } from "@/lib/types";
@@ -33,10 +33,12 @@ function getSpeechSupport() {
 }
 
 export function useCommandConsole() {
+  const queryClient = useQueryClient();
   const [input, setInput] = useState(commandExample);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState(commandExample);
-  const [latestAnalysis, setLatestAnalysis] = useState<CommandAnalysisResponse | null>(null);
+  const [latestAnalysis, setLatestAnalysis] =
+    useState<CommandAnalysisResponse | null>(null);
   const [speechSupported, setSpeechSupported] = useState(false);
 
   const mutation = useMutation({
@@ -57,7 +59,8 @@ export function useCommandConsole() {
 
   const toggleListening = () => {
     if (typeof window === "undefined") return;
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const Recognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!Recognition) {
       setIsListening(false);
@@ -91,7 +94,10 @@ export function useCommandConsole() {
     await mutation.mutateAsync({ command, source });
   };
 
-  const reasoning = useMemo(() => latestAnalysis?.reasoning ?? [], [latestAnalysis]);
+  const reasoning = useMemo(
+    () => latestAnalysis?.reasoning ?? [],
+    [latestAnalysis],
+  );
 
   return {
     input,
