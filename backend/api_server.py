@@ -241,7 +241,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.api_route("/", methods=["GET", "POST"])
+@app.api_route("/", methods=["GET", "POST", "HEAD"])
 async def root(request: Request):
     return {
         "status": "ok", 
