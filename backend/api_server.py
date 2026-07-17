@@ -8,7 +8,7 @@ import time
 from typing import Dict, List, Any
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -241,9 +241,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-async def root():
-    return {"status": "ok", "message": "SwarmGuard API is running and healthy"}
+@app.api_route("/", methods=["GET", "POST"])
+async def root(request: Request):
+    return {
+        "status": "ok", 
+        "message": "SwarmGuard A2MCP API is running and healthy",
+        "method": request.method
+    }
 
 # ─────────────────────────────────────────────────────────
 # Endpoints
