@@ -1,3 +1,5 @@
+export type Tone = "primary" | "success" | "warning" | "danger";
+
 export type CommandPhase = {
   id: string;
   label: string;
@@ -9,7 +11,7 @@ export type ProjectSummaryCard = {
   title: string;
   value: string;
   description: string;
-  tone: "primary" | "success" | "warning" | "danger";
+  tone: Tone;
 };
 
 export type AgentNode = {
@@ -18,7 +20,15 @@ export type AgentNode = {
   role: string;
   trustScore: number;
   hourlyRate: number;
-  status: "Active" | "Evaluating" | "Replaced" | "Deploying";
+  status:
+    | "Active"
+    | "Evaluating"
+    | "Replaced"
+    | "Deploying"
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "Idle"
+    | string;
   currentTask: string;
   heartbeat: "stable" | "warning" | "critical";
 };
@@ -28,7 +38,7 @@ export type ActivityItem = {
   time: string;
   label: string;
   detail: string;
-  tone: "primary" | "success" | "warning" | "danger";
+  tone: Tone;
 };
 
 export type TimelineEvent = {
@@ -37,7 +47,7 @@ export type TimelineEvent = {
   time: string;
   summary: string;
   detail: string;
-  tone: "primary" | "success" | "warning" | "danger";
+  tone: Tone;
 };
 
 export type EvaluationSignal = {
@@ -101,4 +111,23 @@ export type AppSnapshot = {
   metrics: MetricCard[];
   chartData: ChartPoint[];
   commandExample: string;
+};
+
+export type BackendStreamEvent = {
+  type:
+    | "connected"
+    | "heartbeat"
+    | "swarm_initiated"
+    | "milestone_evaluated"
+    | string;
+  message?: string;
+  task_id?: string;
+  action?: string;
+  timestamp?: number;
+};
+
+export type ApiErrorPayload = {
+  error?: string;
+  message?: string;
+  detail?: string;
 };
