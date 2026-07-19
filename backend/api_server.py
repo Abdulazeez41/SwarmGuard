@@ -132,10 +132,8 @@ def build_snapshot() -> Dict[str, Any]:
             })
     
     # Metrics from global stats
-        # Metrics from global stats
     stats = orchestrator.swarm_memory.get("global_stats", {})
     
-    # FIX: If no projects managed yet, show premium demo data instead of 0
     if stats.get("projects_managed", 0) == 0:
         metrics = [
             {"id": "pm", "label": "Projects Managed", "value": "1,284", "delta": "+12.4%"},
