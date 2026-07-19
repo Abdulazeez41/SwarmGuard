@@ -1,5 +1,5 @@
-import { apiClient } from "@/lib/api/client";
-import { AnalyzeResponse, SnapshotResponse } from "@/lib/api/client";
+import { AnalyzeResponse, apiClient, SnapshotResponse } from "@/lib/api/client";
+import { BackendStreamEvent } from "@/lib/types";
 
 export type AnalyzeCommandInput = {
   command: string;
@@ -16,7 +16,10 @@ export const swarmguardApi = {
       body: input,
     });
   },
-  connectActivityStream(onMessage: (message: string) => void) {
-    return apiClient.connectActivityStream(onMessage);
+  connectActivityStream(
+    onMessage: (message: string) => void,
+    onEvent?: (event: BackendStreamEvent) => void,
+  ) {
+    return apiClient.connectActivityStream(onMessage, onEvent);
   },
 };
