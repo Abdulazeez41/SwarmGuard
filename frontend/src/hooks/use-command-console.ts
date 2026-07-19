@@ -32,20 +32,21 @@ function getSpeechSupport() {
   return Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
-export function useCommandConsole() {
+export function useCommandConsole(initialCommand = commandExample) {
   const queryClient = useQueryClient();
-  const [input, setInput] = useState(commandExample);
+  const [input, setInput] = useState(initialCommand);
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState(commandExample);
+  const [transcript, setTranscript] = useState(initialCommand);
   const [latestAnalysis, setLatestAnalysis] =
     useState<CommandAnalysisResponse | null>(null);
   const [speechSupported, setSpeechSupported] = useState(false);
 
   const mutation = useMutation({
     mutationFn: swarmguardApi.analyzeCommand,
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       setTranscript(data.transcript);
       setLatestAnalysis(data);
+      await queryClient.invalidateQueries({ queryKey: ["snapshot"] });
     },
   });
 
