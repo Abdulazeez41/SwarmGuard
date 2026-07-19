@@ -8,7 +8,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants = {
   primary:
-    "bg-[linear-gradient(135deg,rgba(79,124,255,0.95),rgba(110,231,255,0.95))] text-white shadow-[0_18px_60px_rgba(79,124,255,0.28)] hover:scale-[1.01]",
+    "bg-[linear-gradient(135deg,#2dd4bf,#34d399)] text-white shadow-[0_18px_60px_rgba(45,212,191,0.28)] hover:scale-[1.01] hover:shadow-[0_22px_70px_rgba(45,212,191,0.4)]",
   secondary:
     "border border-white/14 bg-white/6 text-white/92 hover:bg-white/10",
   ghost: "text-white/72 hover:bg-white/8 hover:text-white",
@@ -21,21 +21,23 @@ const sizes = {
   icon: "h-12 w-12",
 };
 
-export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
-  { className, variant = "primary", size = "md", type = "button", ...props },
-  ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type={type}
-      className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full font-medium transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#050816] disabled:pointer-events-none disabled:opacity-50",
-        variants[variant],
-        sizes[size],
-        className,
-      )}
-      {...props}
-    />
-  );
-});
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
+  function Button(
+    { className, variant = "primary", size = "md", type = "button", ...props },
+    ref,
+  ) {
+    return (
+      <button
+        ref={ref}
+        type={type}
+        className={cn(
+          "inline-flex items-center justify-center gap-2 rounded-full font-medium transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020c17] disabled:pointer-events-none disabled:opacity-50",
+          variants[variant],
+          sizes[size],
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
