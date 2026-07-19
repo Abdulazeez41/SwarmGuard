@@ -164,9 +164,9 @@ class TeamBuilder:
             # Score and rank agents
             scored_agents = []
             for agent in agents:
-                feedback_rate = agent.get("feedbackRate", 0)
-                security_rate = agent.get("securityRate", 0)
-                sold_count = agent.get("soldCount", 0)
+                feedback_rate = agent.get("feedbackRate") or 0
+                security_rate = agent.get("securityRate") or 0
+                sold_count = agent.get("soldCount") or 0
                 
                 # Calculate composite trust score (0-100)
                 # Weight: 50% feedback, 30% security, 20% popularity
