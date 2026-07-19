@@ -153,7 +153,6 @@ class SwarmOrchestrator:
             task["team"].pop(task["current_milestone"])
             role_key = ROLE_MAP.get(current_agent['specialization'], current_agent['specialization'].lower().replace(" ", "_"))
             
-            # ZERO MOCKS: Attempt live search, fallback to live data fetch for a backup ID
             replacement = self._find_replacement_agent(role_key, task["budget_remaining"])
             
             if replacement and "error" not in replacement:
@@ -188,7 +187,6 @@ class SwarmOrchestrator:
             agent_id = str(top_agent.get("agentId", "UNKNOWN"))
             return self._get_live_agent_data_for_id(agent_id, role_key)
         
-        # FALLBACK: CLI failed. Fetch LIVE data for a known backup agent ID.
         backup_agents = {
             "frontend_developer": "6011", "backend_developer": "6021",
             "smart_contract_expert": "6031", "security_auditor": "6041"
