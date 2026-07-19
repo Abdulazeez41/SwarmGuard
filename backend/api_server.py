@@ -251,7 +251,7 @@ app.add_middleware(
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://swarmguard.onrender.com",
-        "https://swarmguard.vercel.app",
+        "https://swarm-guard.vercel.app",
         "https://*.vercel.app",
     ],
     allow_credentials=True,
