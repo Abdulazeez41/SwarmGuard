@@ -35,14 +35,14 @@ class TeamBuilder:
         NO MOCKS. All data comes from the XLayer blockchain via Web3.py.
         """
         try:
-            # 1. Fetch live marketplace/on-chain data
+            # Fetch live marketplace/on-chain data
             marketplace_data = self.marketplace.get_agent_marketplace_data(agent_id)
             
-            # 2. Calculate REAL trust score from live data
+            # Calculate REAL trust score from live data
             score_data = self.marketplace.calculate_transparent_scores(marketplace_data)
             trust_score = score_data["total"]
             
-            # 3. Estimate hourly rate based on live trust score (higher trust = premium)
+            # Estimate hourly rate based on live trust score (higher trust = premium)
             base_rates = {"smart_contract_expert": 150, "frontend_developer": 120, "security_auditor": 200}
             base_rate = base_rates.get(role, 100)
             score_multiplier = 0.8 + (trust_score / 100) * 0.4
