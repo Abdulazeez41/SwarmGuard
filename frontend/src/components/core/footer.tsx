@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 const footerLinks = {
   product: [
@@ -38,9 +39,13 @@ export function Footer() {
         <div className="grid gap-10 border-b border-white/8 pb-12 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#2dd4bf,#fbbf24)] text-sm font-bold text-white shadow-[0_8px_30px_rgba(45,212,191,0.3)]">
-                SG
-              </span>
+              <Image
+                src="/logo.png"
+                alt="SwarmGuard Logo"
+                width={40}
+                height={40}
+                className="rounded-xl object-cover shadow-[0_8px_30px_rgba(45,212,191,0.3)]"
+              />
               <div>
                 <div className="text-sm font-semibold text-white">
                   SwarmGuard

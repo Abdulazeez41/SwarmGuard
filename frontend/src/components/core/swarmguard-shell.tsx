@@ -1,6 +1,7 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import {
   Activity,
@@ -43,7 +44,7 @@ function BootScreen() {
     <main className="relative min-h-screen overflow-hidden bg-[#020c17] text-white">
       <AuroraBackground />
       <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-        {/* Animated logo - NOW WITH TEAL/AMBER GRADIENT */}
+        {/* Animated logo with Image */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -51,8 +52,14 @@ function BootScreen() {
           className="relative"
         >
           <div className="absolute inset-0 rounded-3xl bg-[linear-gradient(135deg,#2dd4bf,#fbbf24)] blur-2xl opacity-40" />
-          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,#2dd4bf,#fbbf24)] text-2xl font-bold text-white shadow-[0_20px_80px_rgba(45,212,191,0.5)]">
-            SG
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 p-2 shadow-[0_20px_80px_rgba(45,212,191,0.5)] backdrop-blur-sm border border-white/10">
+            <Image
+              src="/logo.png"
+              alt="SwarmGuard Logo"
+              width={80}
+              height={80}
+              className="rounded-2xl object-cover"
+            />
           </div>
         </motion.div>
 
@@ -182,10 +189,13 @@ export function SwarmguardShell() {
         <header className="fixed inset-x-0 top-0 z-50 border-b border-white/6 bg-[#020c17]/70 backdrop-blur-2xl">
           <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-6 lg:px-12">
             <a href="#top" className="group flex items-center gap-3 text-white">
-              {/* SG Logo */}
-              <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-[linear-gradient(135deg,#2dd4bf,#fbbf24)] text-xs font-bold text-white shadow-[0_8px_30px_rgba(45,212,191,0.4)] transition-shadow group-hover:shadow-[0_12px_40px_rgba(45,212,191,0.6)]">
-                SG
-              </span>
+              <Image
+                src="/logo.png"
+                alt="SwarmGuard Logo"
+                width={36}
+                height={36}
+                className="rounded-xl object-cover shadow-[0_8px_30px_rgba(45,212,191,0.4)] transition-shadow group-hover:shadow-[0_12px_40px_rgba(45,212,191,0.6)]"
+              />
               <span>
                 <span className="block text-[11px] font-medium uppercase tracking-[0.28em] text-white/50">
                   SwarmGuard
@@ -389,7 +399,6 @@ export function SwarmguardShell() {
               key={title}
               className="group relative overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-xl transition-all hover:border-teal-400/20 hover:bg-white/8"
             >
-              {/* Teal hover glow - MATCHES NEW THEME */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(45,212,191,0.12),transparent_50%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="relative">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-teal-400/20 to-amber-400/10 text-teal-200 transition-transform group-hover:scale-105">
