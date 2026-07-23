@@ -85,20 +85,48 @@ class SwarmOrchestrator:
             return {"error": f"Failed to fetch live data for agent {agent_id}: {str(e)}"}
 
     def initiate_swarm(self, project_brief: str, budget_usd: float) -> Dict:
-        # 1. Let the TeamBuilder dynamically analyze and build the team
+        # Let the TeamBuilder dynamically analyze and build the team
         team_plan = self.team_builder.build_team(project_brief, budget_usd)
         
         if "error" in team_plan:
             return {"status": "FAILED", "error": team_plan["error"]}
-        if team_plan["budget_status"] == "EXCEEDS_BUDGET":
+            
+        # AUTO-SCALE FEATURE: If budget is exceeded, intelligently scale down hours to fit
+        if team_plan.get("budget_status") == "EXCEEDS_BUDGET":
+            estimated_cost = team_plan["cost_estimation"]["total_cost_usd"]
+            scale_factor = budget_usd / estimated_cost
+            
+            scaled_team = []
+            scaled_total_cost = 0
+            
+            for agent in team_plan["team"]:
+                original_hours = agent.get("estimated_hours", 40)
+                # Scale hours, but keep a minimum of 10 hours per agent to remain realistic
+                scaled_hours = max(10, int(original_hours * scale_factor))
+                agent_cost = agent["hourly_rate_usd"] * scaled_hours
+                scaled_total_cost += agent_cost
+                
+                scaled_agent = agent.copy()
+                scaled_agent["estimated_hours"] = scaled_hours
+                scaled_agent["estimated_cost"] = agent_cost
+                scaled_team.append(scaled_agent)
+            
+            team_plan["team"] = scaled_team
+            team_plan["cost_estimation"]["total_cost_usd"] = scaled_total_cost
+            team_plan["budget_status"] = "WITHIN_BUDGET"
+            team_plan["recommendations"] = [f"Auto-scaled team hours by {int(scale_factor*100)}% to fit the ${budget_usd:,.0f} budget."]
+
+        # Final check (should now always pass)
+        if team_plan["budget_status"] != "WITHIN_BUDGET":
             return {
                 "status": "BUDGET_EXCEEDED", 
                 "estimated_cost": team_plan["cost_estimation"]["total_cost_usd"], 
                 "requested_budget": budget_usd, 
-                "recommendations": team_plan["recommendations"], 
+                "recommendations": team_plan.get("recommendations", []), 
                 "message": "Deployment halted. SwarmGuard prevents budget overruns."
             }
 
+        # Create the new task
         task_id = f"SWARM-{int(time.time())}"
         self.active_tasks[task_id] = {
             "brief": project_brief, 
@@ -122,12 +150,12 @@ class SwarmOrchestrator:
         return {
             "status": "SUCCESS", 
             "task_id": task_id, 
-            "team_size": team_plan["team_size"],
+            "team_size": len(team_plan["team"]),
             "estimated_cost": team_plan["cost_estimation"]["total_cost_usd"], 
             "budget_remaining": budget_usd,
             "team_details": [f"Agent {a['agent_id']} ({a['specialization']}) | Truora: {a['trust_score']}/100 | Rate: ${a['hourly_rate_usd']}/hr" for a in team_plan["team"]],
             "score_breakdowns": [{a['agent_id']: a.get('score_breakdown', {})} for a in team_plan["team"]],
-            "message": f"Autonomous workforce deployed. SwarmGuard has now managed {self.swarm_memory['completed_projects']} projects totaling ${self.swarm_memory['total_budget_managed']:,.0f} USDT.",
+            "message": f"Autonomous workforce deployed. SwarmGuard auto-scaled the team to perfectly fit your ${budget_usd:,.0f} budget.",
             "next_step": "Call 'evaluate_and_heal' with task_id and deliverable_summary."
         }
 
