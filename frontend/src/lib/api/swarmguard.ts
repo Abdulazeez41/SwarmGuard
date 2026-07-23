@@ -8,10 +8,10 @@ export type AnalyzeCommandInput = {
 
 export const swarmguardApi = {
   getSnapshot() {
-    return apiClient.request<SnapshotResponse>("/snapshot");
+    return apiClient.request<SnapshotResponse>("/api/snapshot");
   },
   analyzeCommand(input: AnalyzeCommandInput) {
-    return apiClient.request<AnalyzeResponse>("/command/analyze", {
+    return apiClient.request<AnalyzeResponse>("/api/command/analyze", {
       method: "POST",
       body: input,
     });
