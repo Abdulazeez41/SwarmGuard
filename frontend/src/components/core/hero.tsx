@@ -39,35 +39,6 @@ export function Hero() {
                 Launch Workforce
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button
-                size="lg"
-                variant="secondary"
-                onClick={() => scrollToId("workforce")}
-              >
-                <PlayCircle className="h-4 w-4" />
-                Watch Demo
-              </Button>
-            </div>
-            <div className="mt-8 grid max-w-2xl gap-4 sm:grid-cols-3">
-              {[
-                ["Describe", "State the mission in natural language or voice."],
-                [
-                  "Swarm",
-                  "SwarmGuard recruits, allocates bonds, and assigns milestones.",
-                ],
-                [
-                  "Ship",
-                  "Evaluation, payments, and self-healing run autonomously.",
-                ],
-              ].map(([title, detail]) => (
-                <div
-                  key={title}
-                  className="group rounded-3xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 backdrop-blur transition-all hover:border-teal-400/20 hover:bg-white/8"
-                >
-                  <div className="font-medium text-white">{title}</div>
-                  <div className="mt-2 leading-6 text-slate-400">{detail}</div>
-                </div>
-              ))}
             </div>
           </motion.div>
         </div>
