@@ -1,8 +1,25 @@
-# 🛡️ SwarmGuard
+<p align="center">
+  <img src="frontend/public/logo.png" width="190" alt="SwarmGuard Logo" />
+</p>
 
-> Autonomous Workforce Operating System powered by the OKX AI Ecosystem.
+<p align="center">
+<b>Autonomous Workforce Operating System powered by the OKX AI Ecosystem.</b>
+</p>
 
-SwarmGuard is an AI-native operating system that transforms natural language into autonomous software execution.
+<p align="center">
+  Deploy • Manage • Evaluate • Heal Autonomous AI Workforces
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?style=for-the-badge" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/TailwindCSS-4-38BDF8?style=for-the-badge" alt="TailwindCSS" />
+  <img src="https://img.shields.io/badge/Framer-Motion-purple?style=for-the-badge" alt="Framer Motion" />
+  <img src="https://img.shields.io/badge/Powered%20by-OKX%20AI-success?style=for-the-badge" alt="OKX AI" />
+</p>
+
+**SwarmGuard** is an AI-native operating system that transforms natural language into autonomous software execution.
 
 Describe a project, define a budget, and SwarmGuard intelligently deploys, manages, evaluates, and continuously optimizes a specialized AI workforce capable of delivering complex engineering tasks with minimal human intervention.
 
@@ -68,6 +85,8 @@ No freelancer management.
 No arbitration.
 
 Just autonomous execution.
+
+> NOTE: SwarmGuard doesn't hold the client's money. It only decides who gets paid, when, and how much.
 
 ---
 
@@ -303,7 +322,7 @@ SwarmGuard/
 ├── hooks/
 ├── lib/
 ├── public/
-├── styles/
+├── store/
 ├── backend/
 │   ├── api/
 │   ├── services/
@@ -375,7 +394,7 @@ The frontend acts as the presentation layer while the Python backend remains the
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/swarmguard.git
+git clone https://github.com/Abdulazeez41/SwarmGuard.git
 ```
 
 Install dependencies:
@@ -431,13 +450,12 @@ npm run build
 Example:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-NEXT_PUBLIC_ENABLE_VOICE=true
-
-NEXT_PUBLIC_ENABLE_ANIMATIONS=true
-
-NEXT_PUBLIC_DEMO_MODE=true
+NEXT_PUBLIC_APP_NAME=SwarmGuard
+NEXT_PUBLIC_API_MODE=mock
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api
+NEXT_PUBLIC_AUTH_MODE=demo
+NEXT_PUBLIC_WS_URL=ws://localhost:8000/ws
+NEXT_PUBLIC_DEMO_LATENCY_MS=950
 ```
 
 See `.env.example` for the complete list of configurable variables.
@@ -463,6 +481,26 @@ Deploy the Python backend on:
 - Google Cloud
 
 Update the frontend environment variables to point to the deployed backend API.
+
+---
+
+# 📸 Screenshots
+
+### 🎙️ _AI Command Console_
+
+![AI Command Console](frontend/public/ai.png)
+
+### 🕸️ _Workforce Visualization_
+
+![Workforce Visualization](frontend/public/workforce.png)
+
+### 🧠 _Thinking Experience_
+
+![Thinking Experience](frontend/public/thinking.png)
+
+### 📦 _Mission Complete_
+
+![Deliverables](frontend/public/mission-completed.png)
 
 ---
 
@@ -493,18 +531,24 @@ It should not be used in production environments without additional security rev
 
 ---
 
+# 🎨 Design Principles
+
+SwarmGuard is intentionally designed around a single philosophy:
+
+> **"Users should command work — not manage workers."**
+
+Every interaction emphasizes autonomy, transparency, accountability, and trust through AI-native workflows.
+
+---
+
 # 🔮 Future Roadmap
 
-- Real OKB performance bonds
-- On-chain escrow contracts
-- Live AI agent marketplace
-- Cross-chain workforce execution
-- Autonomous DAO governance
-- Multi-client workspace support
-- Real-time collaboration
-- Persistent Swarm Memory
-- AI performance analytics
-- Reputation-backed hiring marketplace
+- [ ] Live AI agent execution & marketplace integration
+- [ ] Multi-chain workforce payments & on-chain escrow
+- [ ] Persistent, decentralized Swarm Memory
+- [ ] Enterprise workspaces & multi-client support
+- [ ] Autonomous milestone negotiation
+- [ ] Advanced workforce analytics dashboard
 
 ---
 
@@ -547,4 +591,8 @@ MIT License
 
 ---
 
-**"Describe the project. SwarmGuard deploys the workforce."**
+<p align="center">
+  Built with ❤️ using modern AI technologies.
+  <br />
+  <b>SwarmGuard — The Autonomous Workforce Operating System</b>
+</p>
