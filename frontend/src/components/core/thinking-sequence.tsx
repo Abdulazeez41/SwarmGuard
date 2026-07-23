@@ -6,6 +6,8 @@ import { Card } from "@/components/ui/card";
 import { CommandPhase } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+const STEP_DELAY = 0.35;
+
 export function ThinkingSequence({
   phases,
   riskHeadline,
@@ -28,34 +30,49 @@ export function ThinkingSequence({
           {riskHeadline}
         </div>
       </div>
-      <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-8 max-w-xl space-y-2">
         {phases.map((phase, index) => (
           <motion.div
             key={phase.id}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.5 }}
-            transition={{ delay: index * 0.05 }}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * STEP_DELAY, duration: 0.3 }}
             className={cn(
-              "rounded-[24px] border p-4",
+              "flex items-center gap-3 rounded-xl border px-4 py-2.5",
               phase.state === "done" &&
                 "border-emerald-300/20 bg-emerald-300/8",
               phase.state === "active" && "border-teal-300/25 bg-teal-300/10",
               phase.state === "pending" && "border-white/10 bg-white/4",
             )}
           >
-            <div className="flex items-center gap-3">
-              {phase.state === "done" ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-300" />
-              ) : phase.state === "active" ? (
-                <LoaderCircle className="h-5 w-5 animate-spin text-teal-300" />
-              ) : (
-                <span className="inline-flex h-5 w-5 rounded-full border border-white/14 bg-white/5" />
-              )}
-              <div className="text-sm font-medium text-white">
-                {phase.label}
-              </div>
-            </div>
+            {phase.state === "done" ? (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{
+                  delay: index * STEP_DELAY + 0.15,
+                  type: "spring",
+                  stiffness: 300,
+                }}
+              >
+                <CheckCircle2 className="h-[18px] w-[18px] text-emerald-300" />
+              </motion.span>
+            ) : phase.state === "active" ? (
+              <LoaderCircle className="h-[18px] w-[18px] animate-spin text-teal-300" />
+            ) : (
+              <span className="inline-flex h-[18px] w-[18px] rounded-full border border-white/14 bg-white/5" />
+            )}
+            <div className="text-sm font-medium text-white">{phase.label}</div>
+            {index === phases.length - 1 && phase.state !== "done" ? (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: index * STEP_DELAY + 0.3 }}
+                className="ml-auto text-xs text-white/40"
+              >
+                working…
+              </motion.span>
+            ) : null}
           </motion.div>
         ))}
       </div>
