@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { swarmguardApi } from "@/lib/api/swarmguard";
@@ -60,6 +60,7 @@ export function LiveActivityFeed({
 }) {
   const [streamNote, setStreamNote] = useState<string>("");
   const [streamEvents, setStreamEvents] = useState<ActivityItem[]>([]);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const disconnect = swarmguardApi.connectActivityStream(
@@ -90,6 +91,10 @@ export function LiveActivityFeed({
     [items, streamEvents],
   );
 
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [visibleItems.length]);
+
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between gap-4">
@@ -110,14 +115,16 @@ export function LiveActivityFeed({
           {streamNote}
         </div>
       ) : null}
-      <div className="mt-6 space-y-3">
+      <div
+        ref={scrollRef}
+        className="mt-6 max-h-[420px] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin]"
+      >
         {visibleItems.map((item, index) => (
           <motion.div
             key={item.id}
             initial={{ opacity: 0, x: -12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, amount: 0.4 }}
-            transition={{ delay: index * 0.04 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index === 0 ? 0 : index * 0.03 }}
             className="flex gap-4 rounded-[24px] border border-white/10 bg-white/5 p-4"
           >
             <div
