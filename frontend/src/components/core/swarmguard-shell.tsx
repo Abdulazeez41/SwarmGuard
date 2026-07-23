@@ -5,31 +5,25 @@ import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence, useScroll, useSpring } from "framer-motion";
 import {
   Activity,
+  ArrowDown,
   BrainCircuit,
   Command,
-  Menu,
   Network,
   ShieldCheck,
   Sparkles,
-  X,
 } from "lucide-react";
-import { useState, useEffect } from "react";
-import { AnalyticsPanel } from "@/components/core/analytics-panel";
-import { AuditTrail } from "@/components/core/audit-trail";
+import { useEffect, useRef } from "react";
 import { AuroraBackground } from "@/components/core/aurora-background";
 import { CommandConsole } from "@/components/core/command-console";
-import { EvaluationEngine } from "@/components/core/evaluation-engine";
 import { Footer } from "@/components/core/footer";
 import { Hero } from "@/components/core/hero";
-import { LiveActivityFeed } from "@/components/core/live-activity-feed";
-import { ProjectTimeline } from "@/components/core/project-timeline";
+import { ResultsHub } from "@/components/core/results-hub";
 import { ScrollStory } from "@/components/core/scroll-story";
 import { SectionShell } from "@/components/core/section-shell";
-import { SelfHealingPanel } from "@/components/core/self-healing-panel";
-import { SummaryCards } from "@/components/core/summary-cards";
-import { SwarmMemoryPanel } from "@/components/core/swarm-memory-panel";
-import { WorkforceGraph } from "@/components/core/workforce-graph";
 import { swarmguardApi } from "@/lib/api/swarmguard";
+import { useUiStore } from "@/store/ui-store";
+import { ExecutionSummary } from "@/components/core/execution-summary";
+import { executionSummaryData } from "@/lib/mock-data";
 
 const bootSequence = [
   "Initializing neural mesh",
@@ -44,7 +38,6 @@ function BootScreen() {
     <main className="relative min-h-screen overflow-hidden bg-[#020c17] text-white">
       <AuroraBackground />
       <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-4 sm:px-6 lg:px-8">
-        {/* Animated logo with Image */}
         <motion.div
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -59,11 +52,11 @@ function BootScreen() {
               width={80}
               height={80}
               className="rounded-2xl object-cover"
+              priority
             />
           </div>
         </motion.div>
 
-        {/* Title */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -78,7 +71,6 @@ function BootScreen() {
           </div>
         </motion.div>
 
-        {/* Animated boot sequence */}
         <div className="mt-10 w-full max-w-md">
           <div className="space-y-2">
             {bootSequence.map((step, index) => (
@@ -116,7 +108,6 @@ function BootScreen() {
             ))}
           </div>
 
-          {/* Progress bar - NOW WITH TEAL/AMBER GRADIENT */}
           <div className="mt-6 h-px w-full overflow-hidden rounded-full bg-white/10">
             <motion.div
               initial={{ width: "0%" }}
@@ -131,13 +122,43 @@ function BootScreen() {
   );
 }
 
+function AwaitingResultsPrompt() {
+  return (
+    <SectionShell
+      eyebrow="Waiting on you"
+      title="Run a command above to bring the workforce online."
+      description="The recruitment graph, evaluation engine, self-healing sequence, audit trail, and analytics all populate live from whatever you ask SwarmGuard to build — nothing below this point is pre-filled."
+      className="pb-24"
+    >
+      <button
+        onClick={() =>
+          document
+            .getElementById("command-console")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+        className="group flex w-full flex-col items-center gap-3 rounded-[28px] border border-dashed border-white/14 bg-white/3 px-6 py-10 text-center text-sm text-slate-300 transition-colors hover:border-teal-300/30 hover:bg-white/5"
+      >
+        <motion.span
+          animate={{ y: [0, 6, 0] }}
+          transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-teal-300/24 bg-teal-300/10 text-teal-200"
+        >
+          <ArrowDown className="h-4 w-4" />
+        </motion.span>
+        <span className="text-white/80">Jump back to the command console</span>
+      </button>
+    </SectionShell>
+  );
+}
+
 export function SwarmguardShell() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["snapshot"],
     queryFn: swarmguardApi.getSnapshot,
   });
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const hasAnalyzed = useUiStore((state) => state.hasAnalyzed);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
@@ -145,14 +166,14 @@ export function SwarmguardShell() {
     restDelta: 0.001,
   });
 
-  // Close mobile menu on escape key
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, []);
+    if (hasAnalyzed) {
+      resultsRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  }, [hasAnalyzed]);
 
   if (isLoading || !data) {
     return <BootScreen />;
@@ -178,14 +199,12 @@ export function SwarmguardShell() {
     <main className="relative overflow-hidden bg-[#020c17] text-white">
       <AuroraBackground />
 
-      {/* Scroll Progress Indicator - PREMIUM TOUCH */}
       <motion.div
         className="fixed left-0 right-0 top-0 z-[60] h-0.5 origin-left bg-gradient-to-r from-teal-400 via-emerald-400 to-amber-400"
         style={{ scaleX }}
       />
 
       <div className="relative z-10">
-        {/* Refined Header with Mobile Menu */}
         <header className="fixed inset-x-0 top-0 z-50 border-b border-white/6 bg-[#020c17]/70 backdrop-blur-2xl">
           <div className="mx-auto flex h-16 max-w-[1600px] items-center justify-between px-6 lg:px-12">
             <a href="#top" className="group flex items-center gap-3 text-white">
@@ -206,84 +225,21 @@ export function SwarmguardShell() {
               </span>
             </a>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden items-center gap-1 text-sm md:flex">
-              {[
-                { href: "#command-console", label: "Console" },
-                { href: "#workforce", label: "Workforce" },
-                { href: "#evaluation", label: "Evaluation" },
-                { href: "#audit", label: "Audit" },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="rounded-full px-4 py-2 text-white/60 transition-colors hover:bg-white/5 hover:text-white"
-                >
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-
             <div className="flex items-center gap-2">
-              {/* Live Status Indicator */}
-              <span className="hidden items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/8 px-3 py-1 text-xs text-emerald-200 sm:flex">
+              <span className="flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/8 px-3 py-1 text-xs text-emerald-200">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
                 </span>
                 Live
               </span>
-
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="rounded-lg p-2 text-white/60 transition-colors hover:bg-white/5 hover:text-white md:hidden"
-                aria-label="Toggle menu"
-                aria-expanded={mobileMenuOpen}
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </button>
             </div>
           </div>
-
-          {/* Mobile Menu Dropdown */}
-          <AnimatePresence>
-            {mobileMenuOpen && (
-              <motion.nav
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden border-t border-white/6 bg-[#020c17]/90 backdrop-blur-2xl md:hidden"
-              >
-                <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-                  {[
-                    { href: "#command-console", label: "Console" },
-                    { href: "#workforce", label: "Workforce" },
-                    { href: "#evaluation", label: "Evaluation" },
-                    { href: "#audit", label: "Audit" },
-                  ].map((item) => (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="block rounded-lg px-4 py-3 text-white/70 transition-colors hover:bg-white/5 hover:text-white"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                </div>
-              </motion.nav>
-            )}
-          </AnimatePresence>
         </header>
 
         <div id="top" />
         <Hero />
+
         <SectionShell
           eyebrow="One command surface"
           title="The homepage is the operating system."
@@ -292,6 +248,7 @@ export function SwarmguardShell() {
         >
           <CommandConsole />
         </SectionShell>
+
         <SectionShell
           eyebrow="Scroll storytelling"
           title="From brief to delivery, the entire autonomous journey stays visible."
@@ -300,62 +257,51 @@ export function SwarmguardShell() {
         >
           <ScrollStory />
         </SectionShell>
-        <SectionShell
-          eyebrow="Mission interpretation"
-          title="Immediate system understanding, before the workforce even starts moving."
-          description="As soon as the command lands, SwarmGuard derives summary, budget, risk, skills, and workforce structure."
-          className="pb-24"
-        >
-          <SummaryCards cards={data.summaryCards} />
-        </SectionShell>
-        <SectionShell
-          eyebrow="Workforce graph"
-          title="A living swarm around the project nucleus."
-          description="React Flow turns the workforce into a believable operating graph with trust, task state, and heartbeats."
-          className="pb-24"
-        >
-          <div id="workforce" className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-            <WorkforceGraph agents={data.agents} />
-            <LiveActivityFeed items={data.activity} />
-          </div>
-        </SectionShell>
-        <SectionShell
-          eyebrow="Operational control"
-          title="Timelines, evaluation, and self-healing feel autonomous, not administrative."
-          description="SwarmGuard shows objective confidence, replayable evidence, and recovery behaviors without collapsing into dashboard chrome."
-          className="pb-24"
-        >
-          <div className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
-            <ProjectTimeline events={data.timeline} />
-            <div id="evaluation" className="space-y-4">
-              <EvaluationEngine signals={data.evaluationSignals} />
-              <SelfHealingPanel />
-            </div>
-          </div>
-        </SectionShell>
-        <SectionShell
-          eyebrow="Learning and transparency"
-          title="The swarm remembers failures and exposes decisions."
-          description="Memory and auditability turn orchestration into a trustworthy system that can plug into a real backend."
-          className="pb-24"
-        >
-          <div className="grid gap-4 xl:grid-cols-[0.82fr_1.18fr]">
-            <SwarmMemoryPanel insights={data.memory} />
-            <div id="audit">
-              <AuditTrail records={data.auditTrail} />
-            </div>
-          </div>
-        </SectionShell>
-        <SectionShell
-          eyebrow="Analytics"
-          title="Animated metrics for investors, operators, and enterprise buyers."
-          description="Performance, replacement behavior, confidence, and budget stewardship stay legible at a glance."
-          className="pb-12"
-        >
-          <AnalyticsPanel metrics={data.metrics} chartData={data.chartData} />
-        </SectionShell>
 
-        {/* Feature Cards */}
+        <div ref={resultsRef} id="results">
+          <AnimatePresence mode="wait">
+            {!hasAnalyzed ? (
+              <motion.div
+                key="awaiting"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <AwaitingResultsPrompt />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                <SectionShell
+                  eyebrow="Your workforce is live"
+                  title="One result, not a dashboard tour."
+                  description="The graph is the payoff of running a command. Timeline, evaluation, activity, audit, and analytics are all one tab away — dig in only if you want to."
+                  className="pb-24"
+                >
+                  <div id="workforce">
+                    <ResultsHub data={data} />
+                  </div>
+                </SectionShell>
+
+                {/* Execution Summary */}
+                <SectionShell
+                  eyebrow="Mission Complete"
+                  title="Execution Summary & Agent Roster"
+                  description="SwarmGuard has successfully orchestrated your workforce. Below is the verified execution blueprint, agent performance audit, and direct access to the OKX agents who completed your mission."
+                  className="pb-24"
+                >
+                  <ExecutionSummary data={executionSummaryData} />
+                </SectionShell>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         <section className="mx-auto grid w-full max-w-[1600px] gap-4 px-6 pb-8 sm:px-8 lg:grid-cols-3 lg:px-12">
           {[
             {
