@@ -131,3 +131,43 @@ export type ApiErrorPayload = {
   message?: string;
   detail?: string;
 };
+
+export type Deliverable = {
+  id: string;
+  title: string;
+  status: "completed" | "in-progress" | "pending";
+  description: string;
+  action: {
+    label: string;
+    href: string;
+    icon: "external" | "download" | "pdf" | "code" | "deploy";
+  };
+};
+
+export type ProjectPackage = {
+  projectId: string;
+  projectName: string;
+  status: "packaging" | "ready";
+  deliverables: Deliverable[];
+  totalSize: string;
+  createdAt: string;
+};
+
+export type ExecutionSummaryItem = {
+  id: string;
+  title: string;
+  description: string;
+  action: {
+    label: string;
+    href: string;
+    icon: "external" | "download" | "pdf" | "code" | "sparkles";
+  };
+};
+
+export type ExecutionSummaryData = {
+  projectName: string;
+  agentsDeployed: number;
+  budgetManaged: string;
+  milestoneCompletion: string;
+  items: ExecutionSummaryItem[];
+};
