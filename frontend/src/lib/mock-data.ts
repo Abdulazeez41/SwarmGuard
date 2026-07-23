@@ -9,8 +9,10 @@ import {
   EvaluationSignal,
   MemoryInsight,
   MetricCard,
+  ProjectPackage,
   ProjectSummaryCard,
   TimelineEvent,
+  ExecutionSummaryData,
 } from "@/lib/types";
 
 export const commandExample =
@@ -19,34 +21,34 @@ export const commandExample =
 export const reasoningPhases: CommandPhase[] = [
   {
     id: "understanding",
-    label: "Parsing natural language brief",
+    label: "Understanding your project",
     state: "done",
   },
   {
     id: "complexity",
-    label: "Calculating technical complexity",
+    label: "Calculating complexity",
     state: "done",
   },
-  { id: "budget", label: "Validating $20,000 budget envelope", state: "done" },
-  { id: "risk", label: "Assessing DeFi security risk profile", state: "done" },
+  { id: "budget", label: "Validating your $20,000 budget", state: "done" },
+  { id: "risk", label: "Assessing security risk", state: "done" },
   {
     id: "recruitment",
-    label: "Scouting optimal agent candidates",
+    label: "Searching the agent marketplace",
     state: "done",
   },
   {
     id: "bonds",
-    label: "Locking performance bonds in sub-escrow",
+    label: "Locking performance bonds",
     state: "done",
   },
   {
     id: "deployment",
-    label: "Deploying autonomous workforce",
+    label: "Deploying the workforce",
     state: "active",
   },
   {
     id: "monitoring",
-    label: "Initializing live evaluation streams",
+    label: "Starting live evaluation",
     state: "pending",
   },
 ];
@@ -143,113 +145,105 @@ export const activity: ActivityItem[] = [
   {
     id: "1",
     time: "16:04",
-    label: "Swarm Initialized",
-    detail:
-      "Budget locked: $20,000 USDT in sub-escrow. Contingency reserve active.",
+    label: "Swarm initialized",
+    detail: "$20,000 locked in escrow. Contingency reserve active.",
     tone: "primary",
   },
   {
     id: "2",
     time: "16:07",
-    label: "Agent Nexus-7 Hired",
-    detail: "Smart Contract Engineer deployed. 5 OKB performance bond locked.",
+    label: "Nexus-7 hired",
+    detail: "Smart Contract Engineer deployed. 5 OKB bond locked.",
     tone: "success",
   },
   {
     id: "3",
     time: "16:10",
-    label: "Agent Aria-3 Hired",
-    detail: "Frontend Engineer deployed. 3 OKB performance bond locked.",
+    label: "Aria-3 hired",
+    detail: "Frontend Engineer deployed. 3 OKB bond locked.",
     tone: "success",
   },
   {
     id: "4",
     time: "16:15",
-    label: "Code Pushed: Staking Contract v1",
-    detail:
-      "Nexus-7 submitted initial logic. Gas optimization pass reduced execution cost by 12%.",
+    label: "Staking contract v1 pushed",
+    detail: "Nexus-7 shipped initial logic. Gas cost cut by 12%.",
     tone: "success",
   },
   {
     id: "5",
     time: "16:22",
-    label: "⚠️ Audit Failure Detected",
-    detail:
-      "Sentinel-5 failed to identify a reentrancy vulnerability in the reward distribution function.",
+    label: "⚠️ Audit failed",
+    detail: "Sentinel-5 missed a reentrancy vulnerability in reward payouts.",
     tone: "danger",
   },
   {
     id: "6",
     time: "16:25",
-    label: "🔄 Self-Healing Triggered",
-    detail:
-      "Sentinel-5 performance bond partially seized. Agent terminated. Scouting for replacement.",
+    label: "🔄 Self-healing triggered",
+    detail: "Bond seized. Sentinel-5 replaced. Scouting a replacement.",
     tone: "warning",
   },
   {
     id: "7",
     time: "16:40",
-    label: "Agent Sentinel-9 Hired",
-    detail:
-      "Senior Security Auditor deployed. 6 OKB performance bond locked. Inheriting task context.",
+    label: "Sentinel-9 hired",
+    detail: "Senior Auditor deployed. 6 OKB bond locked. Context inherited.",
     tone: "success",
   },
   {
     id: "8",
     time: "17:05",
-    label: "Vulnerability Resolved",
-    detail:
-      "Sentinel-9 identified and patched reentrancy risk. Formal verification passed.",
+    label: "Vulnerability resolved",
+    detail: "Sentinel-9 patched the reentrancy risk. Verification passed.",
     tone: "success",
   },
 ];
 
 export const timeline: TimelineEvent[] = [
   {
-    id: "t1", // FIXED: was "is" typo
-    title: "Project Brief Parsed & Budget Locked",
+    id: "t1",
+    title: "Budget locked",
     time: "Day 01 · 09:10",
-    summary:
-      "SwarmGuard derived requirements and locked the $20,000 operating envelope.",
+    summary: "Requirements parsed. $20,000 locked.",
     detail:
-      "Risk multipliers applied due to DeFi context. 9% contingency reserve isolated for autonomous self-healing.",
+      "Risk multipliers applied for the DeFi context. 9% held back as a contingency reserve for autonomous self-healing.",
     tone: "primary",
   },
   {
     id: "t2",
-    title: "Workforce Recruited & Bonds Locked",
+    title: "Workforce recruited",
     time: "Day 01 · 09:15",
-    summary:
-      "Nexus-7 (Contracts) and Aria-3 (Frontend) deployed with performance bonds.",
+    summary: "Nexus-7 (contracts) and Aria-3 (frontend) deployed.",
     detail:
-      "Bonds sized dynamically based on agent trust scores and the criticality of their assigned workstreams.",
+      "Bonds sized automatically based on trust score and how critical each workstream is.",
     tone: "success",
   },
   {
     id: "t3",
-    title: "Milestone 1: Contract Development",
+    title: "Contracts shipped",
     time: "Day 04 · 14:20",
     summary: "Core staking logic compiled and pushed to staging.",
     detail:
-      "Automated gas profiling confirmed optimizations. Handoff to frontend and audit lanes initiated.",
+      "Gas profiling confirmed the optimizations held. Frontend and audit lanes picked up the handoff.",
     tone: "success",
   },
   {
     id: "t4",
-    title: "Self-Healing Event: Auditor Replacement",
+    title: "Auditor replaced",
     time: "Day 06 · 11:30",
-    summary: "Initial security audit failed to meet confidence thresholds.",
+    summary: "Security audit failed the confidence threshold.",
     detail:
-      "SwarmGuard autonomously seized 40% of Sentinel-5's bond, terminated the agent, and recruited Sentinel-9 (Senior Auditor) to inherit the context and complete the review.",
+      "Sentinel-5 failed security validation. Bond seized. Replacement recruited automatically. Work resumed in 2.4 seconds.",
     tone: "danger",
   },
   {
     id: "t5",
-    title: "Milestone 2: Security Clearance & Payment",
+    title: "Audit cleared. Paid.",
     time: "Day 08 · 16:00",
-    summary: "Formal verification passed. Milestone payments released.",
+    summary: "Formal verification passed. Milestone paid out.",
     detail:
-      "Confidence score exceeded 95%. $6,200 released to active agents. Swarm memory updated with new vulnerability patterns.",
+      "Confidence hit 95%. $6,200 released to active agents. Swarm memory updated with the new vulnerability pattern.",
     tone: "success",
   },
 ];
@@ -259,8 +253,7 @@ export const evaluationSignals: EvaluationSignal[] = [
     id: "build",
     label: "Build Success",
     score: 100,
-    detail:
-      "All Solidity and React artifacts compiled cleanly. Zero TypeScript errors.",
+    detail: "All contracts and UI compiled clean. Zero TypeScript errors.",
     tone: "success",
   },
   {
@@ -268,15 +261,14 @@ export const evaluationSignals: EvaluationSignal[] = [
     label: "Test Coverage",
     score: 94,
     detail:
-      "Critical staking flows exceed 90% coverage. Adversarial wallet edge cases included.",
+      "Critical staking flows exceed 90% coverage, including adversarial wallet cases.",
     tone: "primary",
   },
   {
     id: "security",
     label: "Security Audit",
     score: 96,
-    detail:
-      "Reentrancy vulnerability patched by Sentinel-9. Formal verification passed.",
+    detail: "Reentrancy risk patched by Sentinel-9. Verification passed.",
     tone: "success",
   },
 ];
@@ -286,15 +278,15 @@ export const memory: MemoryInsight[] = [
     id: "m1",
     title: "Reentrancy patterns in reward distribution",
     detail:
-      "Swarm memory flagged a specific vulnerability pattern missed by junior auditors. Future DeFi projects will auto-assign Senior Auditors (Trust Score > 95) to reward logic.",
+      "Flagged a vulnerability pattern junior auditors kept missing. Future DeFi projects auto-assign Senior Auditors (trust > 95) to reward logic.",
     weight: "+15% weight to Senior Auditors",
   },
   {
     id: "m2",
     title: "Sentinel-5 performance degradation",
     detail:
-      "Agent 5889 failed 2 consecutive security reviews. Downgraded in the global talent pool. Bond seizure logic validated.",
-    weight: "Agent trust score reduced to 72",
+      "Failed two consecutive security reviews. Downgraded in the global talent pool. Bond seizure logic validated.",
+    weight: "Trust score reduced to 72",
   },
 ];
 
@@ -302,8 +294,8 @@ export const auditTrail: AuditRecord[] = [
   {
     id: "a1",
     timestamp: "2026-07-16T16:04:00Z",
-    action: "Budget Validation & Lock",
-    decision: "Approved $20,000 reserve",
+    action: "Budget secured",
+    decision: "$20,000 locked in escrow.",
     evidence:
       "Complexity model 0.78, DeFi risk multiplier 1.15, 9% replacement reserve.",
     budgetImpact: "+$20,000 locked",
@@ -315,10 +307,10 @@ export const auditTrail: AuditRecord[] = [
   {
     id: "a2",
     timestamp: "2026-07-16T16:25:00Z",
-    action: "Autonomous Self-Healing Triggered",
-    decision: "Terminated Agent 5889 (Sentinel-5)",
+    action: "Sentinel-5 replaced",
+    decision: "Bond seized. Sentinel-9 hired instantly.",
     evidence:
-      "Anomaly score 0.73. Failed to flag reentrancy in reward distribution. Confidence dropped below 70% threshold.",
+      "Anomaly score 0.73. Missed reentrancy in reward distribution. Confidence dropped below 70%.",
     budgetImpact: "+$880 recovered (40% bond seizure)",
     trustImpact: "-24 on Agent 5889",
     confidence: 65,
@@ -328,10 +320,10 @@ export const auditTrail: AuditRecord[] = [
   {
     id: "a3",
     timestamp: "2026-07-16T17:05:00Z",
-    action: "Milestone 1 Payment Released",
-    decision: "Disbursed $6,200 to Nexus-7 and Aria-3",
+    action: "Milestone 1 paid",
+    decision: "$6,200 sent to Nexus-7 and Aria-3.",
     evidence:
-      "Confidence 96. Build pass, coverage pass, security audit pass. No unresolved blockers.",
+      "Confidence 96. Build pass, coverage pass, security pass. No blockers.",
     budgetImpact: "-$6,200 released",
     trustImpact: "+5 to Nexus-7, +3 to Aria-3",
     confidence: 96,
@@ -377,5 +369,151 @@ export const commandAnalysisResponse: CommandAnalysisResponse = {
   ),
   reasoning: reasoningPhases,
   riskHeadline:
-    "Security-critical DeFi workload detected. Mandatory dual-audit and strict performance bonds applied.",
+    "Security-critical DeFi workload detected. Dual-audit and strict bonds applied.",
+};
+
+export const projectPackage: ProjectPackage = {
+  projectId: "proj-defi-staking-001",
+  projectName: "DeFi Staking Launchpad",
+  status: "ready",
+  totalSize: "2.4 MB",
+  createdAt: "2026-07-16T17:05:00Z",
+  deliverables: [
+    {
+      id: "d1",
+      title: "Smart Contracts",
+      status: "completed",
+      description:
+        "Staking, reward distribution, and governance contracts on Sepolia testnet.",
+      action: {
+        label: "View on Explorer",
+        href: "https://sepolia.etherscan.io/address/0x1234...5678",
+        icon: "external",
+      },
+    },
+    {
+      id: "d2",
+      title: "Frontend Application",
+      status: "completed",
+      description:
+        "React + Next.js dashboard with wallet integration and live yield tracking.",
+      action: {
+        label: "Open Live Preview",
+        href: "https://your-staking-app.vercel.app",
+        icon: "external",
+      },
+    },
+    {
+      id: "d3",
+      title: "Source Code",
+      status: "completed",
+      description:
+        "Full monorepo with contracts, frontend, tests, and CI/CD pipelines.",
+      action: {
+        label: "Open GitHub",
+        href: "https://github.com/your-org/defi-staking-launchpad",
+        icon: "code",
+      },
+    },
+    {
+      id: "d4",
+      title: "Security Audit Report",
+      status: "completed",
+      description:
+        "Sentinel-9 formal verification. 96/100 confidence. Reentrancy patched.",
+      action: {
+        label: "View PDF",
+        href: "/deliverables/audit-report.pdf",
+        icon: "pdf",
+      },
+    },
+    {
+      id: "d5",
+      title: "Documentation",
+      status: "completed",
+      description:
+        "Architecture docs, API reference, deployment guide, and user manual.",
+      action: {
+        label: "Open Docs",
+        href: "https://docs.your-staking-app.com",
+        icon: "external",
+      },
+    },
+    {
+      id: "d6",
+      title: "Complete Package",
+      status: "completed",
+      description:
+        "Everything bundled into a single archive. Ready for mainnet deployment.",
+      action: {
+        label: "Download ZIP",
+        href: "/deliverables/project-package.zip",
+        icon: "download",
+      },
+    },
+  ],
+};
+
+export const executionSummaryData: ExecutionSummaryData = {
+  projectName: "DeFi Staking Launchpad",
+  agentsDeployed: 3,
+  budgetManaged: "$20,000",
+  milestoneCompletion: "100%",
+  items: [
+    {
+      id: "roster",
+      title: "Verified Agent Roster",
+      description:
+        "View the live OKX Marketplace profiles, trust scores, and performance history of the agents who executed this mission.",
+      action: {
+        label: "View Agent #5993 (Truora)",
+        href: "https://www.okx.ai/agents/5993",
+        icon: "external",
+      },
+    },
+    {
+      id: "blueprint",
+      title: "Execution Blueprint",
+      description:
+        "The AI-generated project plan, including milestone breakdowns, role assignments, and budget allocation approved by SwarmGuard.",
+      action: {
+        label: "Download Blueprint (PDF)",
+        href: "#",
+        icon: "download",
+      },
+    },
+    {
+      id: "audit",
+      title: "Performance & Bond Audit",
+      description:
+        "The immutable log of all evaluations, performance bond locks, and the autonomous self-healing event that replaced Agent 5889.",
+      action: {
+        label: "View Audit Trail",
+        href: "#audit",
+        icon: "pdf",
+      },
+    },
+    {
+      id: "memory",
+      title: "Swarm Memory Update",
+      description:
+        "New behavioral data and vulnerability patterns from this execution have been permanently recorded to improve future hiring decisions.",
+      action: {
+        label: "View Memory Log",
+        href: "#",
+        icon: "code",
+      },
+    },
+    {
+      id: "next",
+      title: "Next Mission",
+      description:
+        "Ready to scale? Use the insights from this execution to deploy the next phase of your project.",
+      action: {
+        label: "Start New Workforce",
+        href: "#command-console",
+        icon: "sparkles",
+      },
+    },
+  ],
 };
