@@ -2,18 +2,10 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  GitBranch,
-  Mic,
-  Paperclip,
-  Sparkles,
-  Upload,
-  Waves,
-} from "lucide-react";
+import { Mic, Paperclip, Sparkles, Upload, Waves } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useCommandConsole } from "@/hooks/use-command-console";
 import { SummaryCards } from "@/components/core/summary-cards";
@@ -21,7 +13,6 @@ import { ThinkingSequence } from "@/components/core/thinking-sequence";
 
 type CommandForm = {
   command: string;
-  repository: string;
 };
 
 export function CommandConsole() {
@@ -41,7 +32,6 @@ export function CommandConsole() {
   const { register, control, handleSubmit, setValue } = useForm<CommandForm>({
     defaultValues: {
       command: input,
-      repository: "",
     },
   });
 
@@ -75,12 +65,11 @@ export function CommandConsole() {
             </span>
           </div>
           <h3 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-gradient-primary sm:text-4xl">
-            Tell SwarmGuard what to build. The workforce plan appears instantly.
+            Describe your project.
           </h3>
           <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300/80">
-            Speak, type, upload a brief, or paste a repository. SwarmGuard
-            transforms one command into budget validation, risk analysis, and a
-            complete autonomous workforce.
+            I&apos;ll handle the rest - budget, hiring, evaluation, and
+            delivery. Speak, type, or upload a brief.
           </p>
           <form className="mt-7 space-y-4" onSubmit={onSubmit}>
             <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
@@ -90,6 +79,7 @@ export function CommandConsole() {
               <Textarea
                 id="command-textarea"
                 aria-label="Project command"
+                placeholder="e.g. Build me a secure DeFi staking dashboard with a $20,000 budget…"
                 {...register("command", {
                   onChange: (event) => setInput(event.target.value),
                 })}
@@ -139,42 +129,19 @@ export function CommandConsole() {
                 </div>
               </motion.button>
             </div>
-            <div className="grid gap-4 md:grid-cols-[1fr_auto_auto_auto]">
-              <Input
-                aria-label="GitHub repository"
-                placeholder="Paste GitHub repository URL"
-                {...register("repository")}
-              />
+            <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
               <Button
+                type="button"
                 variant="secondary"
                 onClick={() => fileInputRef.current?.click()}
                 aria-label="Upload brief"
-                className="w-full"
               >
                 <Upload className="h-4 w-4" />
                 Upload File
               </Button>
-              <Button
-                variant="secondary"
-                aria-label="Paste GitHub repository from clipboard"
-                className="w-full"
-                onClick={async () => {
-                  if (typeof navigator === "undefined" || !navigator.clipboard)
-                    return;
-                  const value = await navigator.clipboard.readText();
-                  setValue("repository", value, { shouldDirty: true });
-                }}
-              >
-                <GitBranch className="h-4 w-4" />
-                Paste Repo
-              </Button>
-              <Button
-                type="submit"
-                className="w-full"
-                aria-label="Generate workforce"
-              >
+              <Button type="submit" aria-label="Generate workforce">
                 <Sparkles className="h-4 w-4" />
-                Generate Workforce
+                Build It
               </Button>
             </div>
             <input
