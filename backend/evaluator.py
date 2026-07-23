@@ -9,7 +9,7 @@ class AutonomousEvaluator:
 
     def evaluate_deliverable(self, deliverable_summary: str, specialization: str) -> Dict:
         """
-        FIX 3 & 4: Uses a multi-signal heuristic engine (MVP) instead of simple keyword matching.
+        Uses a multi-signal heuristic engine (MVP) instead of simple keyword matching.
         Calculates dynamic confidence based on the ratio of positive to negative signals.
         """
         summary_lower = deliverable_summary.lower()
