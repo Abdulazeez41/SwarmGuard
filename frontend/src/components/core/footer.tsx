@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 
 const footerLinks = {
   product: [
@@ -28,24 +29,42 @@ const footerLinks = {
   ],
 };
 
+function FooterLogo() {
+  const [useFallback, setUseFallback] = useState(false);
+
+  if (useFallback) {
+    return (
+      <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 shadow-[0_8px_30px_rgba(45,212,191,0.3)] backdrop-blur-sm border border-white/10">
+        <div className="absolute inset-0 rounded-xl bg-[linear-gradient(135deg,#2dd4bf,#fbbf24)] blur-xl opacity-40" />
+        <span className="relative text-sm font-bold bg-gradient-to-br from-teal-300 to-amber-300 bg-clip-text text-transparent">
+          SG
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <Image
+      src="/logo.png"
+      alt="SwarmGuard Logo"
+      width={40}
+      height={40}
+      className="rounded-xl object-cover shadow-[0_8px_30px_rgba(45,212,191,0.3)]"
+      onError={() => setUseFallback(true)}
+      unoptimized
+    />
+  );
+}
+
 export function Footer() {
   return (
     <footer className="relative mt-32 w-full border-t border-white/8 bg-[#020c17]/60 backdrop-blur-xl">
-      {/* Subtle top glow line */}
       <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(45,212,191,0.4),rgba(251,191,36,0.3),transparent)]" />
-
       <div className="mx-auto w-full max-w-[1600px] px-6 pb-10 pt-16 lg:px-12">
-        {/* Top section: Brand + Newsletter CTA */}
         <div className="grid gap-10 border-b border-white/8 pb-12 lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <div className="flex items-center gap-3">
-              <Image
-                src="/logo.png"
-                alt="SwarmGuard Logo"
-                width={40}
-                height={40}
-                className="rounded-xl object-cover shadow-[0_8px_30px_rgba(45,212,191,0.3)]"
-              />
+              <FooterLogo />
               <div>
                 <div className="text-sm font-semibold text-white">
                   SwarmGuard
@@ -71,8 +90,6 @@ export function Footer() {
               <span className="text-xs text-white/40">v1.0.0</span>
             </div>
           </div>
-
-          {/* Newsletter / CTA */}
           <div className="rounded-[24px] border border-white/10 bg-gradient-to-br from-teal-500/8 via-amber-500/4 to-transparent p-6">
             <div className="text-xs uppercase tracking-[0.24em] text-teal-200/80">
               Stay in the loop
@@ -103,7 +120,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Middle section: Link columns */}
         <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">
@@ -175,14 +191,12 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom section: Copyright + Social */}
         <div className="flex flex-col items-start justify-between gap-4 border-t border-white/8 pt-8 sm:flex-row sm:items-center">
           <div className="text-xs text-white/40">
             © {new Date().getFullYear()} SwarmGuard Labs, Inc. All rights
             reserved.
           </div>
           <div className="flex items-center gap-5">
-            {/* GitHub */}
             <a
               href="#"
               aria-label="GitHub"
@@ -192,7 +206,6 @@ export function Footer() {
                 <path d="M12 .5C5.37.5 0 5.87 0 12.5c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.04-.02-2.05-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.02 0c2.3-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22 0 1.61-.01 2.9-.01 3.29 0 .32.22.7.82.58C20.56 22.3 24 17.8 24 12.5 24 5.87 18.63.5 12 .5z" />
               </svg>
             </a>
-            {/* Twitter/X */}
             <a
               href="#"
               aria-label="Twitter"
@@ -202,7 +215,6 @@ export function Footer() {
                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
               </svg>
             </a>
-            {/* LinkedIn */}
             <a
               href="#"
               aria-label="LinkedIn"
@@ -212,7 +224,6 @@ export function Footer() {
                 <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.95v5.66H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0z" />
               </svg>
             </a>
-            {/* Discord */}
             <a
               href="#"
               aria-label="Discord"
