@@ -17,7 +17,7 @@ import { AgentNode } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
 
 const WorkforceCard = memo(({ data }: { data: AgentNode }) => {
-  const isProject = data.role === "Project";
+  const isProject = data.role.includes("Project");
   return (
     <div
       className={`min-w-[220px] rounded-[24px] border ${
@@ -75,49 +75,72 @@ const WorkforceCard = memo(({ data }: { data: AgentNode }) => {
     </div>
   );
 });
+
 WorkforceCard.displayName = "WorkforceCard";
 
+const nodeTypes = {
+  workforce: WorkforceCard,
+};
+
 export function WorkforceGraph({ agents }: { agents: AgentNode[] }) {
-  const nodes = useMemo<Node[]>(() => {
+  const { nodes, edges } = useMemo(() => {
+    if (!agents || agents.length === 0) {
+      return { nodes: [], edges: [] };
+    }
+
     const project =
-      agents.find((agent) => agent.role === "Project") ?? agents[0];
+      agents.find((agent) => agent.role.includes("Project")) ?? agents[0];
     const others = agents.filter((agent) => agent.id !== project.id);
-    return [
+
+    const generatedNodes: Node[] = [
       {
         id: project.id,
         type: "workforce",
         position: { x: 280, y: 20 },
         data: project,
       },
-      ...others.map((agent, index) => ({
-        id: agent.id,
+    ];
+
+    const generatedEdges: Edge[] = [];
+
+    others.forEach((agent, index) => {
+      const uniqueAgentId = `${agent.id}-${index}`;
+
+      generatedNodes.push({
+        id: uniqueAgentId,
         type: "workforce",
         position: {
           x: (index % 2) * 320 + 80,
           y: Math.floor(index / 2) * 220 + 240,
         },
         data: agent,
-      })),
-    ];
-  }, [agents]);
+      });
 
-  const edges = useMemo<Edge[]>(() => {
-    const project =
-      agents.find((agent) => agent.role === "Project") ?? agents[0];
-    return agents
-      .filter((agent) => agent.id !== project.id)
-      .map((agent, index) => ({
-        id: `${project.id}-${agent.id}`,
+      generatedEdges.push({
+        id: `edge-${project.id}-${uniqueAgentId}`,
         source: project.id,
-        target: agent.id,
+        target: uniqueAgentId,
         animated: true,
         markerEnd: { type: MarkerType.ArrowClosed, color: "#2dd4bf" },
         style: {
           stroke: index === 3 ? "#fb7185" : "#2dd4bf",
           strokeWidth: 2.2,
         },
-      }));
+      });
+    });
+
+    return { nodes: generatedNodes, edges: generatedEdges };
   }, [agents]);
+
+  if (!agents || agents.length === 0) {
+    return (
+      <Card className="flex h-[620px] items-center justify-center p-5">
+        <div className="text-sm text-white/60">
+          No agents deployed yet. Run a command to initialize the swarm.
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden p-5">
@@ -138,9 +161,10 @@ export function WorkforceGraph({ agents }: { agents: AgentNode[] }) {
         <ReactFlow
           nodes={nodes}
           edges={edges}
-          nodeTypes={{ workforce: WorkforceCard }}
+          nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.18, minZoom: 0.5, maxZoom: 1.2 }}
+          defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
           proOptions={{ hideAttribution: true }}
           nodesDraggable={false}
           elementsSelectable={false}
