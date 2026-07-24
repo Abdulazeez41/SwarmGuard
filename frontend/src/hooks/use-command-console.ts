@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { swarmguardApi } from "@/lib/api/swarmguard";
-import { commandExample } from "@/lib/mock-data";
 import { CommandAnalysisResponse } from "@/lib/types";
 import { useUiStore } from "@/store/ui-store";
 
@@ -54,7 +53,7 @@ function getSpeechSupport() {
 }
 
 export function useCommandConsole(
-  initialCommand = commandExample,
+  initialCommand = "",
   onCommandSubmitted?: () => void,
 ) {
   const queryClient = useQueryClient();

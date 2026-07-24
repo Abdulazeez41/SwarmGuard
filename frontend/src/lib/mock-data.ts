@@ -477,8 +477,8 @@ export const executionSummaryData: ExecutionSummaryData = {
       description:
         "The AI-generated project plan, including milestone breakdowns, role assignments, and budget allocation approved by SwarmGuard.",
       action: {
-        label: "Download Blueprint (PDF)",
-        href: "#",
+        label: "Download Blueprint",
+        href: "https://swarmguard.onrender.com/api/blueprint",
         icon: "download",
       },
     },
@@ -489,7 +489,7 @@ export const executionSummaryData: ExecutionSummaryData = {
         "The immutable log of all evaluations, performance bond locks, and the autonomous self-healing event that replaced Agent 5889.",
       action: {
         label: "View Audit Trail",
-        href: "#audit",
+        href: "#results",
         icon: "pdf",
       },
     },
@@ -500,7 +500,7 @@ export const executionSummaryData: ExecutionSummaryData = {
         "New behavioral data and vulnerability patterns from this execution have been permanently recorded to improve future hiring decisions.",
       action: {
         label: "View Memory Log",
-        href: "#",
+        href: "#results",
         icon: "code",
       },
     },
