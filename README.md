@@ -594,5 +594,5 @@ MIT License
 <p align="center">
   Built with ❤️ using modern AI technologies.
   <br />
-  <b>SwarmGuard — The Autonomous Workforce Operating System</b>
+  <b>SwarmGuard - The Autonomous Workforce Operating System</b>
 </p>
