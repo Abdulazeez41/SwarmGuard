@@ -1,21 +1,32 @@
-from mcp.server.fastmcp import FastMCP
-from web3 import Web3
+"""
+SwarmGuard MCP Server
+"""
+
 import re
 
+from dotenv import load_dotenv
+from mcp.server.fastmcp import FastMCP
+from web3 import Web3
+
+load_dotenv()
+
+from database import init_db
 from marketplace_collector import MarketplaceDataCollector
 from runtime import orchestrator
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
 # MCP SERVER
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
-mcp = FastMCP("SwarmGuard: Autonomous Workforce OS")
+mcp = FastMCP(
+    "SwarmGuard: Autonomous Workforce OS"
+)
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
 # BLOCKCHAIN CONFIGURATION
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 XLayer_RPC = "https://testrpc.xlayer.tech"
 
@@ -24,82 +35,173 @@ w3 = Web3(
 )
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
 # MARKETPLACE DATA COLLECTOR
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 marketplace = MarketplaceDataCollector()
 
-# ─────────────────────────────────────────────────────────
+
+# ============================================================
+# CONSTANTS
+# ============================================================
+
+DEMO_AGENT_WALLET = (
+    "0x1b2f5d07f1ed46bdbbeb019ee7797f65d8d2dbfd"
+)
+
+KNOWN_AGENT_IDS = {
+    "5889",
+    "5922",
+    "5765",
+    "5993",
+}
+
+
+# ============================================================
 # HELPERS
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 def is_valid_evm_address(address: str) -> bool:
     """
-    Validate that a string is a basic EVM wallet address.
+    Validate a basic EVM wallet address.
 
     Example:
+
         0x1234567890123456789012345678901234567890
     """
 
     return bool(
-        re.match(
-            r"^0x[a-fA-F0-9]{40}$",
-            address
+        re.fullmatch(
+            r"0x[a-fA-F0-9]{40}",
+            address,
         )
     )
 
 
-# ─────────────────────────────────────────────────────────
-# MCP TOOL 1
-# CREDIT / DECISION INTELLIGENCE REPORT
-# ─────────────────────────────────────────────────────────
-
-@mcp.tool()
-def generate_credit_report(agent_identifier: str) -> dict:
+def resolve_agent_identity(
+    agent_identifier: str,
+) -> tuple[str | None, str]:
     """
-    Generates a Decision Intelligence Report for a single agent.
+    Resolve an agent identifier into:
 
-    The agent can be identified by:
-    - A supported agent ID
-    - An EVM wallet address
+        (agent_id, wallet_address)
+
+    Supported inputs:
+
+    1. Known agent ID
+    2. Direct EVM wallet address
+
+    Returns:
+
+        ("5993", "0x...")
+        or
+        (None, "0x...")
     """
 
-    wallet_address = agent_identifier
-    agent_id = None
+    agent_identifier = agent_identifier.strip()
 
-    # ─────────────────────────────────────────────────────
-    # Resolve Agent ID
-    # ─────────────────────────────────────────────────────
-
+    # Agent ID
     if agent_identifier.isdigit():
 
         agent_id = agent_identifier
 
-        # Known demo/test agent IDs mapped to a wallet address.
-        if agent_id in ["5889", "5922", "5765", "5993"]:
-            wallet_address = (
-                "0x1b2f5d07f1ed46bdbbeb019ee7797f65d8d2dbfd"
+        if agent_id in KNOWN_AGENT_IDS:
+            return (
+                agent_id,
+                DEMO_AGENT_WALLET,
             )
 
-    # ─────────────────────────────────────────────────────
-    # Validate Wallet Address
-    # ─────────────────────────────────────────────────────
+        return (
+            agent_id,
+            "",
+        )
 
-    if not is_valid_evm_address(wallet_address):
+    # Direct wallet address
+    if is_valid_evm_address(agent_identifier):
+        return (
+            None,
+            agent_identifier,
+        )
+
+    return (
+        None,
+        "",
+    )
+
+
+# ============================================================
+# MCP TOOL 1
+# CREDIT / DECISION INTELLIGENCE REPORT
+# ============================================================
+
+@mcp.tool()
+def generate_credit_report(
+    agent_identifier: str,
+) -> dict:
+    """
+    Generate a Decision Intelligence Report for an agent.
+
+    The agent can be identified by:
+
+    - A supported agent ID
+    - An EVM wallet address
+
+    The report combines:
+
+    - Blockchain wallet activity
+    - Marketplace history
+    - Behavioral profile
+    - Risk factors
+    - Credit events
+    - Delivery prediction
+    - Transparent trust scoring
+    - Hiring recommendation
+    """
+
+    # --------------------------------------------------------
+    # Resolve identity
+    # --------------------------------------------------------
+
+    agent_id, wallet_address = resolve_agent_identity(
+        agent_identifier
+    )
+
+    if not wallet_address:
         return {
-            "error": "Invalid Agent ID or EVM wallet address format."
+            "error": (
+                "Invalid or unresolved agent identifier. "
+                "Provide a supported agent ID or valid "
+                "EVM wallet address."
+            )
         }
 
     try:
 
-        # ─────────────────────────────────────────────────
-        # Blockchain Data
-        # ─────────────────────────────────────────────────
+        # ----------------------------------------------------
+        # Validate blockchain connection
+        # ----------------------------------------------------
 
-        checksum_address = w3.to_checksum_address(
-            wallet_address
+        if not w3.is_connected():
+            return {
+                "error": (
+                    "Unable to connect to XLayer RPC."
+                )
+            }
+
+        # ----------------------------------------------------
+        # Convert to checksum address
+        # ----------------------------------------------------
+
+        checksum_address = (
+            w3.to_checksum_address(
+                wallet_address
+            )
         )
+
+        # ----------------------------------------------------
+        # Blockchain data
+        # ----------------------------------------------------
 
         nonce = w3.eth.get_transaction_count(
             checksum_address
@@ -112,17 +214,23 @@ def generate_credit_report(agent_identifier: str) -> dict:
         balance_eth = float(
             w3.from_wei(
                 balance_wei,
-                "ether"
+                "ether",
             )
         )
 
-        # ─────────────────────────────────────────────────
-        # Marketplace Intelligence
-        # ─────────────────────────────────────────────────
+        # ----------------------------------------------------
+        # Marketplace intelligence
+        # ----------------------------------------------------
+
+        marketplace_identifier = (
+            agent_id
+            if agent_id
+            else checksum_address
+        )
 
         marketplace_data = (
             marketplace.get_agent_marketplace_data(
-                agent_id or wallet_address
+                marketplace_identifier
             )
         )
 
@@ -162,48 +270,72 @@ def generate_credit_report(agent_identifier: str) -> dict:
             )
         )
 
-        # ─────────────────────────────────────────────────
-        # Calculate Decision Intelligence Score
-        # ─────────────────────────────────────────────────
+        # ----------------------------------------------------
+        # Decision Intelligence Score
+        # ----------------------------------------------------
 
-        total_score = score_data["total"]
+        total_score = score_data.get(
+            "total",
+            0,
+        )
+
+        # ----------------------------------------------------
+        # Primary strength
+        # ----------------------------------------------------
 
         primary_strength = (
             "Strong behavioral profile"
-            if "Proven Track Record" in behavioral_profile
+            if "Proven Track Record"
+            in behavioral_profile
             else "Zero adverse disputes (New Agent)"
         )
 
-        primary_risk = (
-            risk_factors[0]
-            if risk_factors
-            and "No significant" not in risk_factors[0]
-            else "None detected"
-        )
+        # ----------------------------------------------------
+        # Primary risk
+        # ----------------------------------------------------
 
-        # ─────────────────────────────────────────────────
-        # Hiring Recommendation
-        # ─────────────────────────────────────────────────
+        if (
+            risk_factors
+            and "No significant"
+            not in risk_factors[0]
+        ):
+            primary_risk = risk_factors[0]
+        else:
+            primary_risk = "None detected"
+
+        # ----------------------------------------------------
+        # Hiring recommendation
+        # ----------------------------------------------------
+
+        prediction_confidence = prediction.get(
+            "confidence",
+            0,
+        )
 
         if (
             total_score >= 80
-            and prediction["confidence"] >= 70
+            and prediction_confidence >= 70
         ):
 
-            hiring_verdict = "HIGHLY RECOMMENDED"
+            hiring_verdict = (
+                "HIGHLY RECOMMENDED"
+            )
 
             decision_reason = (
-                "Strong track record, excellent behavioral "
-                "profile, and high prediction confidence."
+                "Strong track record, excellent "
+                "behavioral profile, and high "
+                "prediction confidence."
             )
 
         elif total_score >= 60:
 
-            hiring_verdict = "RECOMMENDED WITH CAUTION"
+            hiring_verdict = (
+                "RECOMMENDED WITH CAUTION"
+            )
 
             decision_reason = (
-                "Adequate history, but monitor specific "
-                "risk factors."
+                "Adequate history, but monitor "
+                "specific risk factors."
             )
 
         else:
@@ -213,13 +345,14 @@ def generate_credit_report(agent_identifier: str) -> dict:
             )
 
             decision_reason = (
-                "Insufficient data or elevated risk factors. "
-                "Consider a low-value trial."
+                "Insufficient data or elevated "
+                "risk factors. Consider a "
+                "low-value trial."
             )
 
-        # ─────────────────────────────────────────────────
-        # Return Decision Intelligence Report
-        # ─────────────────────────────────────────────────
+        # ----------------------------------------------------
+        # Return report
+        # ----------------------------------------------------
 
         return {
 
@@ -234,7 +367,8 @@ def generate_credit_report(agent_identifier: str) -> dict:
                 "network":
                     (
                         "XLayer Mainnet"
-                        if agent_id in ["5765", "5993"]
+                        if agent_id
+                        in ["5765", "5993"]
                         else "XLayer Testnet"
                     ),
 
@@ -242,6 +376,22 @@ def generate_credit_report(agent_identifier: str) -> dict:
                     checksum_address,
 
             },
+
+            "blockchain_activity": {
+
+                "transaction_count":
+                    nonce,
+
+                "native_balance":
+                    balance_eth,
+
+                "native_balance_unit":
+                    "XLayer native asset",
+
+            },
+
+            "specialization":
+                specialization,
 
             "behavioral_profile":
                 behavioral_profile,
@@ -255,12 +405,15 @@ def generate_credit_report(agent_identifier: str) -> dict:
             "prediction_and_confidence": {
 
                 "success_probability":
-                    f"{prediction['probability']}%",
+                    f"{prediction.get('probability', 0)}%",
 
                 "confidence_level":
-                    f"{prediction['confidence']}%",
+                    f"{prediction_confidence}%",
 
             },
+
+            "score_breakdown":
+                score_data,
 
             "hiring_decision": {
 
@@ -290,92 +443,256 @@ def generate_credit_report(agent_identifier: str) -> dict:
     except Exception as e:
 
         return {
-            "error":
-                f"Failed to generate report: {str(e)}"
+            "error": (
+                "Failed to generate credit report: "
+                f"{str(e)}"
+            )
         }
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
 # MCP TOOL 2
 # INITIATE SWARM TASK
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 @mcp.tool()
 def initiate_swarm_task(
     project_brief: str,
-    budget_usd: float
+    budget_usd: float,
 ) -> dict:
     """
-    SwarmGuard Tool 1: Deploys an autonomous workforce.
+    Deploy an autonomous workforce.
 
-    Validates budget constraints and locks performance
-    bonds before hiring.
+    The SwarmOrchestrator:
 
-    Uses the shared SwarmOrchestrator instance from runtime.py.
+    1. Analyzes the project.
+    2. Builds a team.
+    3. Validates the budget.
+    4. Creates a persistent swarm task.
+    5. Stores the task in PostgreSQL.
+    6. Locks performance-bond state.
+    7. Returns the persistent task ID.
+
+    The task can later be accessed by:
+
+        evaluate_and_heal_milestone()
+        get_swarm_status()
+
+    from either MCP or REST API.
     """
 
+    # --------------------------------------------------------
+    # Validate input
+    # --------------------------------------------------------
+
+    if not project_brief.strip():
+        return {
+            "status": "ERROR",
+            "message": (
+                "Project brief cannot be empty."
+            ),
+        }
+
+    if budget_usd <= 0:
+        return {
+            "status": "ERROR",
+            "message": (
+                "Budget must be greater than zero."
+            ),
+        }
+
+    # --------------------------------------------------------
+    # Delegate to shared orchestrator
+    # --------------------------------------------------------
+
     return orchestrator.initiate_swarm(
-        project_brief,
-        budget_usd
+        project_brief=project_brief.strip(),
+        budget_usd=budget_usd,
     )
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
 # MCP TOOL 3
 # EVALUATE AND HEAL MILESTONE
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 @mcp.tool()
 def evaluate_and_heal_milestone(
     task_id: str,
-    deliverable_summary: str
+    deliverable_summary: str,
 ) -> dict:
     """
-    SwarmGuard Tool 2: The Autonomous Evaluator.
+    Evaluate the current milestone of a swarm task.
 
-    Analyzes the deliverable summary for objective
-    success/failure keywords.
+    On success:
 
-    On failure, it autonomously:
+    - Releases milestone payment.
+    - Advances the milestone.
+    - Returns the performance bond.
+    - Persists the updated task.
 
-    1. Forfeits performance bonds.
-    2. Records Swarm Memory lessons.
-    3. Hires a Truora-optimized replacement.
+    On failure:
 
-    Uses the shared SwarmOrchestrator instance from runtime.py.
+    - Applies reputation penalty.
+    - Records the failure.
+    - Forfeits the performance bond.
+    - Records a Swarm Memory lesson.
+    - Searches for a replacement.
+    - Persists the replacement team.
     """
 
+    # --------------------------------------------------------
+    # Validate input
+    # --------------------------------------------------------
+
+    if not task_id.strip():
+        return {
+            "status": "ERROR",
+            "message": (
+                "Task ID cannot be empty."
+            ),
+        }
+
+    if not deliverable_summary.strip():
+        return {
+            "status": "ERROR",
+            "message": (
+                "Deliverable summary cannot be empty."
+            ),
+        }
+
+    # --------------------------------------------------------
+    # Delegate to shared orchestrator
+    # --------------------------------------------------------
+
     return orchestrator.evaluate_and_heal(
-        task_id,
-        deliverable_summary
+        task_id=task_id.strip(),
+        deliverable_summary=(
+            deliverable_summary.strip()
+        ),
     )
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
 # MCP TOOL 4
 # GET SWARM STATUS
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 @mcp.tool()
 def get_swarm_status(
-    task_id: str
+    task_id: str,
 ) -> dict:
     """
-    SwarmGuard Tool 3: Returns the real-time status,
-    active team, Swarm Memory lessons, and full
-    chronological event log.
+    Return the current persistent status of a swarm.
 
-    Uses the shared SwarmOrchestrator instance from runtime.py.
+    This data is loaded from PostgreSQL through the
+    SwarmOrchestrator / SwarmRepository layer.
+
+    Therefore, the task can have been created by:
+
+    - MCP
+    - FastAPI
+    - Another backend process
+
+    as long as all processes use the same database.
     """
 
+    if not task_id.strip():
+        return {
+            "status": "ERROR",
+            "message": (
+                "Task ID cannot be empty."
+            ),
+        }
+
     return orchestrator.get_swarm_status(
-        task_id
+        task_id.strip()
     )
 
 
-# ─────────────────────────────────────────────────────────
+# ============================================================
+# OPTIONAL MCP TOOL 5
+# LIST SWARM TASKS
+# ============================================================
+
+@mcp.tool()
+def list_swarm_tasks() -> dict:
+    """
+    Return all persisted swarm tasks.
+
+    Useful for discovering task IDs when integrating
+    OpenClaw or other MCP clients.
+    """
+
+    try:
+
+        tasks = (
+            orchestrator.repository.get_all_tasks()
+        )
+
+        return {
+            "status": "SUCCESS",
+            "count": len(tasks),
+            "tasks": [
+                {
+                    "task_id":
+                        task["task_id"],
+
+                    "brief":
+                        task["brief"],
+
+                    "status":
+                        task["status"],
+
+                    "budget_remaining":
+                        task["budget_remaining"],
+
+                    "current_milestone":
+                        task["current_milestone"],
+
+                    "created_at":
+                        task.get("created_at"),
+
+                    "updated_at":
+                        task.get("updated_at"),
+
+                }
+                for task in tasks
+            ],
+        }
+
+    except Exception as e:
+
+        return {
+            "status": "ERROR",
+            "message": (
+                f"Failed to list swarm tasks: {str(e)}"
+            ),
+        }
+
+
+# ============================================================
 # LOCAL MCP STDIO ENTRYPOINT
-# ─────────────────────────────────────────────────────────
+# ============================================================
 
 if __name__ == "__main__":
+
+    init_db()
+
+    print(
+        "🛡️ SwarmGuard MCP Server starting..."
+    )
+
+    print(
+        "📦 Persistent storage: PostgreSQL"
+    )
+
+    print(
+        "🧠 Shared orchestrator: runtime.orchestrator"
+    )
+
+    print(
+        "🔗 MCP transport: stdio"
+    )
+
     mcp.run()

@@ -12,19 +12,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 
+from database import init_db
+from swarm_repository import SwarmRepository
 from swarm_orchestrator import SwarmOrchestrator
-
-
-# ============================================================
-# GLOBAL APPLICATION STATE
-# ============================================================
-
-orchestrator = SwarmOrchestrator()
 
 
 # ============================================================
 # WEBSOCKET CONNECTION MANAGER
 # ============================================================
+orchestrator = SwarmOrchestrator()
+repository = SwarmRepository()
 
 class ConnectionManager:
     """
@@ -303,11 +300,10 @@ def build_snapshot() -> Dict[str, Any]:
     """
     Build the complete AppSnapshot expected by the frontend.
     """
-    latest_task = get_latest_task()
+    latest_task = repository.get_latest_task()
     task_logs = latest_task.get("logs", []) if latest_task else []
     memory_insights = build_memory_insights()
-    swarm_memory = getattr(orchestrator, "swarm_memory", {})
-    lessons = swarm_memory.get("lessons_learned", [])
+    lessons = getattr(orchestrator, "swarm_memory", {}).get("lessons_learned", [])
 
     if latest_task:
         task_status = latest_task.get("status", "UNKNOWN")
@@ -320,20 +316,16 @@ def build_snapshot() -> Dict[str, Any]:
         budget_remaining = 0
         team_size = 0
 
-    timeline = build_timeline(latest_task)
-
     activity = [
         {
-            "id": str(i),
-            "time": f"{16 + i}:{(i * 3) % 60:02d}",
-            "label": f"Event {i + 1}",
+            "id": str(index),
+            "time": f"{16 + index}:{(index * 3) % 60:02d}",
+            "label": f"Event {index + 1}",
             "detail": log[:80],
             "tone": detect_log_tone(log),
         }
-        for i, log in enumerate(task_logs[-6:])
+        for index, log in enumerate(task_logs[-6:])
     ]
-
-    audit_trail = build_audit_trail(latest_task)
 
     return {
         "summaryCards": [
@@ -368,7 +360,7 @@ def build_snapshot() -> Dict[str, Any]:
         ],
         "agents": build_agents(latest_task),
         "activity": activity,
-        "timeline": timeline or [
+        "timeline": build_timeline(latest_task) or [
             {
                 "id": "t0",
                 "title": "Awaiting first swarm deployment",
@@ -401,7 +393,7 @@ def build_snapshot() -> Dict[str, Any]:
                 "tone": "success",
             },
         ],
-        "auditTrail": audit_trail,
+        "auditTrail": build_audit_trail(latest_task),
         "memory": memory_insights or [
             {
                 "id": "m0",
@@ -516,11 +508,23 @@ def parse_command(command: str) -> Dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("🛡️ SwarmGuard API Bridge starting...")
-    print("🛡️ REST API ready.")
-    print("🛡️ WebSocket event streaming ready.")
+
+    print("🛡️  SwarmGuard API Bridge starting...")
+
+    try:
+        init_db()
+        print("🗄️  PostgreSQL database initialized.")
+    except Exception as e:
+        print(
+            f"❌ Database initialization failed: {e}"
+        )
+        raise
+
     yield
-    print("🛡️ SwarmGuard API Bridge shutting down...")
+
+    print(
+        "🛡️  SwarmGuard API Bridge shutting down..."
+    )
 
 
 # ============================================================
@@ -870,10 +874,10 @@ async def evaluate_milestone(input: EvaluateMilestoneInput):
     """
     Direct REST endpoint for milestone evaluation.
     """
-    task = get_task(input.task_id)
-
-    if not task:
-        return {"error": f"Swarm task '{input.task_id}' was not found."}
+    if input.task_id not in orchestrator.active_tasks:
+        return {
+            "error": f"Swarm task '{input.task_id}' was not found."
+        }
 
     result = orchestrator.evaluate_and_heal(
         task_id=input.task_id,
