@@ -576,304 +576,309 @@ class SwarmOrchestrator:
 
         if is_success:
 
-            estimated_cost = current_agent.get("estimated_cost")
+            estimated_cost = current_agent.get(
+                "estimated_cost"
+            )
 
-        if estimated_cost is not None:
-            payment = float(estimated_cost)
+            if estimated_cost is not None:
 
-        else:
-            hourly_rate = float(
-                current_agent.get(
-                    "hourly_rate_usd",
-                    0,
+                payment = float(
+                    estimated_cost
                 )
-            )
-
-            estimated_hours = float(
-                current_agent.get(
-                    "estimated_hours",
-                    0,
-                )
-            )
-
-            payment = (
-                hourly_rate
-                * estimated_hours
-            )
-
-        # =====================================================
-        # BUDGET SAFETY CHECK
-        # =====================================================
-
-        if payment > task["budget_remaining"]:
-
-            task["status"] = "BUDGET_EXCEEDED"
-
-            log_entry += (
-                f"\n⚠️ PAYMENT BLOCKED: "
-                f"Required payment of "
-                f"${payment:,.2f} exceeds the "
-                f"remaining task budget of "
-                f"${task['budget_remaining']:,.2f}."
-            )
-
-            log_entry += (
-                "\n🛑 MILESTONE PAUSED: "
-                "Payment was not released and "
-                "the milestone was not advanced."
-            )
-
-        else:
-
-            # =================================================
-            # RELEASE PAYMENT
-            # =================================================
-
-            task["budget_remaining"] -= payment
-
-            log_entry += (
-                f"\n💰 PAYMENT: Released "
-                f"${payment:,.2f} USDT to Agent "
-                f"{current_agent['agent_id']}."
-            )
-
-            log_entry += (
-                f"\n💼 BUDGET: "
-                f"${task['budget_remaining'] + payment:,.2f} → "
-                f"${task['budget_remaining']:,.2f} USDT."
-            )
-
-
-            task["current_milestone"] += 1
-
-            # =================================================
-            # CHECK FOR MISSION COMPLETION
-            # =================================================
-
-            if (
-                task["current_milestone"]
-                >= len(task["team"])
-            ):
-
-                task["status"] = "COMPLETED"
-
-                log_entry += (
-                    "\n🎉 SWARM MISSION "
-                    "ACCOMPLISHED. "
-                    "All milestones verified."
-                )
-
-            # =========================================================
-            # FAILURE / SELF-HEALING PATH
-            # =========================================================
 
             else:
 
-                reputation_penalty = 5
-
-                original_score = current_agent[
-                    "trust_score"
-                ]
-
-                # =====================================================
-                # PENALIZE CURRENT AGENT
-                # =====================================================
-
-                current_agent[
-                    "trust_score"
-                ] = max(
-                    0,
-                    current_agent["trust_score"]
-                    - reputation_penalty,
-                )
-
-                agent_identifier = current_agent.get(
-                    "agent_id",
-                    "UNKNOWN",
-                )
-
-                # =====================================================
-                # UPDATE AGENT PENALTY COUNT
-                # =====================================================
-
-                memory["agent_penalties"][
-                    agent_identifier
-                ] = (
-                    memory["agent_penalties"].get(
-                        agent_identifier,
+                hourly_rate = float(
+                    current_agent.get(
+                        "hourly_rate_usd",
                         0,
                     )
-                    + 1
                 )
 
-                # =====================================================
-                # UPDATE REPUTATION DOWNGRADE
-                # =====================================================
-
-                memory[
-                    "agent_reputation_downgrades"
-                ][
-                    agent_identifier
-                ] = (
-                    memory[
-                        "agent_reputation_downgrades"
-                    ].get(
-                        agent_identifier,
+                estimated_hours = float(
+                    current_agent.get(
+                        "estimated_hours",
                         0,
                     )
-                    + reputation_penalty
                 )
 
-                # =====================================================
-                # FORFEIT PERFORMANCE BOND
-                # =====================================================
-
-                bond_forfeited = 5
-
-                bond_refund_value = (
-                    bond_forfeited
-                    * 100
+                payment = (
+                    hourly_rate
+                    * estimated_hours
                 )
 
-                task[
-                    "budget_remaining"
-                ] += bond_refund_value
+            # =====================================================
+            # BUDGET SAFETY CHECK
+            # =====================================================
+
+            if payment > task["budget_remaining"]:
+
+                task["status"] = "BUDGET_EXCEEDED"
 
                 log_entry += (
-                    "\n❌ FAIL: Objective "
-                    "criteria not met."
-                )
-
-                log_entry += (
-                    "\n⚖️ PENALTY: 5 OKB "
-                    "performance bond forfeited "
-                    "to client escrow."
+                    f"\n⚠️ PAYMENT BLOCKED: "
+                    f"Required payment of "
+                    f"${payment:,.2f} exceeds the "
+                    f"remaining task budget of "
+                    f"${task['budget_remaining']:,.2f}."
                 )
 
                 log_entry += (
-                    f"\n💰 REFUND: "
-                    f"${bond_refund_value:,.2f} USDT "
-                    "returned to budget."
+                    "\n🛑 MILESTONE PAUSED: "
+                    "Payment was not released and "
+                    "the milestone was not advanced."
+                )
+
+            else:
+
+                # =================================================
+                # RELEASE PAYMENT
+                # =================================================
+
+                task["budget_remaining"] -= payment
+
+                log_entry += (
+                    f"\n💰 PAYMENT: Released "
+                    f"${payment:,.2f} USDT to Agent "
+                    f"{current_agent['agent_id']}."
                 )
 
                 log_entry += (
-                    f"\n📉 REPUTATION: Agent "
-                    f"{agent_identifier}'s Truora score: "
-                    f"{original_score} → "
-                    f"{current_agent['trust_score']}/100."
+                    f"\n💼 BUDGET: "
+                    f"${task['budget_remaining'] + payment:,.2f} → "
+                    f"${task['budget_remaining']:,.2f} USDT."
                 )
 
-                # =====================================================
-                # RECORD LESSON IN PERSISTENT MEMORY
-                # =====================================================
+                task["current_milestone"] += 1
 
-                lesson = (
-                    f"LESSON: Agent "
-                    f"{agent_identifier} failed "
-                    f"{current_agent['specialization']} "
-                    f"- {deliverable_summary[:50]}..."
-                )
-
-                memory[
-                    "lessons_learned"
-                ].append(
-                    lesson
-                )
-
-                log_entry += (
-                    f"\n🧠 SWARM MEMORY: Recorded. "
-                    f"This agent now has "
-                    f"{memory['agent_penalties'][agent_identifier]} "
-                    "penalty record(s)."
-                )
-
-                # =====================================================
-                # FIND REPLACEMENT
-                # =====================================================
-
-                log_entry += (
-                    "\n🔄 OPTIMIZATION: "
-                    "Querying Truora DI "
-                    "for replacement..."
-                )
-
-                task["team"].pop(
-                    task["current_milestone"]
-                )
-
-                role_key = (
-                    current_agent[
-                        "specialization"
-                    ]
-                    .lower()
-                    .replace(
-                        " ",
-                        "_",
-                    )
-                )
-
-                # =====================================================
-                # SEARCH FOR REPLACEMENT
-                # =====================================================
-
-                replacement = (
-                    self._find_replacement_agent(
-                        role_key,
-                        task[
-                            "budget_remaining"
-                        ],
-                    )
-                )
-
-                # =====================================================
-                # REPLACEMENT FOUND
-                # =====================================================
+                # =================================================
+                # CHECK FOR MISSION COMPLETION
+                # =================================================
 
                 if (
-                    replacement
-                    and "error"
-                    not in replacement
+                    task["current_milestone"]
+                    >= len(task["team"])
                 ):
 
+                    task["status"] = "COMPLETED"
+
+                    log_entry += (
+                        "\n🎉 SWARM MISSION "
+                        "ACCOMPLISHED. "
+                        "All milestones verified."
+                    )
+
+
+        # =========================================================
+        # FAILURE / SELF-HEALING PATH
+        # =========================================================
+
+        else:
+
+            reputation_penalty = 5
+
+            original_score = current_agent[
+                "trust_score"
+            ]
+
+            # =====================================================
+            # PENALIZE CURRENT AGENT
+            # =====================================================
+
+            current_agent[
+                "trust_score"
+            ] = max(
+                0,
+                current_agent["trust_score"]
+                - reputation_penalty,
+            )
+
+            agent_identifier = current_agent.get(
+                "agent_id",
+                "UNKNOWN",
+            )
+
+            # =====================================================
+            # UPDATE AGENT PENALTY COUNT
+            # =====================================================
+
+            memory["agent_penalties"][
+                agent_identifier
+            ] = (
+                memory["agent_penalties"].get(
+                    agent_identifier,
+                    0,
+                )
+                + 1
+            )
+
+            # =====================================================
+            # UPDATE REPUTATION DOWNGRADE
+            # =====================================================
+
+            memory[
+                "agent_reputation_downgrades"
+            ][
+                agent_identifier
+            ] = (
+                memory[
+                    "agent_reputation_downgrades"
+                ].get(
+                    agent_identifier,
+                    0,
+                )
+                + reputation_penalty
+            )
+
+            # =====================================================
+            # FORFEIT PERFORMANCE BOND
+            # =====================================================
+
+            bond_forfeited = 5
+
+            bond_refund_value = (
+                bond_forfeited
+                * 100
+            )
+
+            task[
+                "budget_remaining"
+            ] += bond_refund_value
+
+            log_entry += (
+                "\n❌ FAIL: Objective "
+                "criteria not met."
+            )
+
+            log_entry += (
+                "\n⚖️ PENALTY: 5 OKB "
+                "performance bond forfeited "
+                "to client escrow."
+            )
+
+            log_entry += (
+                f"\n💰 REFUND: "
+                f"${bond_refund_value:,.2f} USDT "
+                "returned to budget."
+            )
+
+            log_entry += (
+                f"\n📉 REPUTATION: Agent "
+                f"{agent_identifier}'s Truora score: "
+                f"{original_score} → "
+                f"{current_agent['trust_score']}/100."
+            )
+
+            # =====================================================
+            # RECORD LESSON IN PERSISTENT MEMORY
+            # =====================================================
+
+            lesson = (
+                f"LESSON: Agent "
+                f"{agent_identifier} failed "
+                f"{current_agent['specialization']} "
+                f"- {deliverable_summary[:50]}..."
+            )
+
+            memory[
+                "lessons_learned"
+            ].append(
+                lesson
+            )
+
+            log_entry += (
+                f"\n🧠 SWARM MEMORY: Recorded. "
+                f"This agent now has "
+                f"{memory['agent_penalties'][agent_identifier]} "
+                "penalty record(s)."
+            )
+
+            # =====================================================
+            # FIND REPLACEMENT
+            # =====================================================
+
+            log_entry += (
+                "\n🔄 OPTIMIZATION: "
+                "Querying Truora DI "
+                "for replacement..."
+            )
+
+            task["team"].pop(
+                task["current_milestone"]
+            )
+
+            role_key = (
+                current_agent[
+                    "specialization"
+                ]
+                .lower()
+                .replace(
+                    " ",
+                    "_",
+                )
+            )
+
+            # =====================================================
+            # SEARCH FOR REPLACEMENT
+            # =====================================================
+
+            replacement = (
+                self._find_replacement_agent(
+                    role_key,
                     task[
-                        "team"
-                    ].insert(
-                        task[
-                            "current_milestone"
-                        ],
-                        replacement,
-                    )
+                        "budget_remaining"
+                    ],
+                )
+            )
 
-                    log_entry += (
-                        f"\n✅ REPLACEMENT HIRED: "
-                        f"Agent "
-                        f"{replacement['agent_id']} "
-                        f"(Truora: "
-                        f"{replacement['trust_score']}/100, "
-                        f"Confidence: "
-                        f"{replacement.get('confidence', 80)}%)."
-                    )
+            # =====================================================
+            # REPLACEMENT FOUND
+            # =====================================================
 
-                    log_entry += (
-                        f"\n🔄 RE-ASSIGNING MILESTONE "
-                        f"to Agent "
-                        f"{replacement['agent_id']}..."
-                    )
+            if (
+                replacement
+                and "error"
+                not in replacement
+            ):
 
-                # =====================================================
-                # NO REPLACEMENT FOUND
-                # =====================================================
+                task[
+                    "team"
+                ].insert(
+                    task[
+                        "current_milestone"
+                    ],
+                    replacement,
+                )
 
-                else:
+                log_entry += (
+                    f"\n✅ REPLACEMENT HIRED: "
+                    f"Agent "
+                    f"{replacement['agent_id']} "
+                    f"(Truora: "
+                    f"{replacement['trust_score']}/100, "
+                    f"Confidence: "
+                    f"{replacement.get('confidence', 80)}%)."
+                )
 
-                    task["status"] = "STALLED"
+                log_entry += (
+                    f"\n🔄 RE-ASSIGNING MILESTONE "
+                    f"to Agent "
+                    f"{replacement['agent_id']}..."
+                )
 
-                    log_entry += (
-                        "\n⚠️ WARNING: "
-                        "No suitable replacement "
-                        "found. Task stalled."
-                    )
+            # =====================================================
+            # NO REPLACEMENT FOUND
+            # =====================================================
 
+            else:
+
+                task["status"] = "STALLED"
+
+                log_entry += (
+                    "\n⚠️ WARNING: "
+                    "No suitable replacement "
+                    "found. Task stalled."
+                )
             # =========================================================
             # APPEND LOG TO TASK
             # =========================================================
