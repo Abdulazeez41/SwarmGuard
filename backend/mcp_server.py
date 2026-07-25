@@ -3,6 +3,7 @@ SwarmGuard MCP Server
 """
 
 import re
+import sys
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
@@ -676,23 +677,26 @@ def list_swarm_tasks() -> dict:
 # ============================================================
 
 if __name__ == "__main__":
-
     init_db()
 
     print(
-        "🛡️ SwarmGuard MCP Server starting..."
+        "🛡️ SwarmGuard MCP Server starting...",
+        file=sys.stderr,
     )
 
     print(
-        "📦 Persistent storage: PostgreSQL"
+        "📦 Persistent storage: PostgreSQL",
+        file=sys.stderr,
     )
 
     print(
-        "🧠 Shared orchestrator: runtime.orchestrator"
+        "🧠 Shared orchestrator: runtime.orchestrator",
+        file=sys.stderr,
     )
 
     print(
-        "🔗 MCP transport: stdio"
+        "🔗 MCP transport: stdio",
+        file=sys.stderr,
     )
 
     mcp.run()
