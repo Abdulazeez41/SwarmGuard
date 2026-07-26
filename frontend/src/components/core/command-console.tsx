@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, Paperclip, Sparkles, Upload, Waves } from "lucide-react";
+import { Mic, Paperclip, Pencil, Sparkles, Upload, Waves } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -73,17 +73,25 @@ export function CommandConsole() {
           </p>
           <form className="mt-7 space-y-4" onSubmit={onSubmit}>
             <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-              <label className="sr-only" htmlFor="command-textarea">
-                Project command
-              </label>
-              <Textarea
-                id="command-textarea"
-                aria-label="Project command"
-                placeholder="e.g. Build me a secure DeFi staking dashboard with a $20,000 budget…"
-                {...register("command", {
-                  onChange: (event) => setInput(event.target.value),
-                })}
-              />
+              <div className="relative">
+                <label className="sr-only" htmlFor="command-textarea">
+                  Project command
+                </label>
+                <Textarea
+                  id="command-textarea"
+                  aria-label="Project command"
+                  placeholder="e.g. Build me a secure DeFi staking dashboard with a $20,000 budget…"
+                  className="min-h-[128px] pr-10"
+                  {...register("command", {
+                    onChange: (event) => setInput(event.target.value),
+                  })}
+                />
+                {/* 🛡️ UX Safety Net Hint: Remind them it's editable */}
+                <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5 text-xs text-white/40">
+                  <Pencil className="h-3 w-3" />
+                  <span>Edit if misheard</span>
+                </div>
+              </div>
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.96 }}

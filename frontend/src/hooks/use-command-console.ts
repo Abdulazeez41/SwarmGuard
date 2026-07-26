@@ -52,6 +52,32 @@ function getSpeechSupport() {
   return Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
+const correctTranscription = (text: string): string => {
+  const corrections: Record<string, string> = {
+    "fire stick": "first step",
+    "fire stick in dashboard": "first step in dashboard",
+    "swarm guard": "SwarmGuard",
+    "truora": "Truora",
+    "okx": "OKX",
+    "sub escrow": "sub-escrow",
+    "escrow": "escrow",
+    "mile stone": "milestone",
+  };
+
+  let corrected = text;
+  for (const [wrong, right] of Object.entries(corrections)) {
+    // Use word boundaries (\b) and case-insensitive flag (i)
+    const regex = new RegExp(`\\b${wrong}\\b`, "gi");
+    corrected = corrected.replace(regex, right);
+  }
+
+  if (corrected.length > 0) {
+    corrected = corrected.charAt(0).toUpperCase() + corrected.slice(1);
+  }
+
+  return corrected;
+};
+
 export function useCommandConsole(
   initialCommand = "",
   onCommandSubmitted?: () => void,
@@ -157,7 +183,8 @@ export function useCommandConsole(
       // Update input with combined final + interim transcripts
       const combined = (finalTranscriptRef.current + interimTranscript).trim();
       if (combined) {
-        setInput(combined);
+        const corrected = correctTranscription(combined);
+        setInput(corrected);
       }
     };
 
@@ -197,6 +224,7 @@ export function useCommandConsole(
     () => latestAnalysis?.reasoning ?? [],
     [latestAnalysis],
   );
+  
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -212,6 +240,7 @@ export function useCommandConsole(
       }
     };
   }, []);
+
   return {
     input,
     setInput,

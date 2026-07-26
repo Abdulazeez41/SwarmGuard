@@ -3,6 +3,7 @@ SwarmGuard FastAPI API Server
 """
 
 import json
+import os
 import time
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional
@@ -596,26 +597,39 @@ async def get_snapshot():
 # ============================================================
 
 @app.api_route("/api/credit-report", methods=["GET", "POST"])
-async def credit_report():
+async def credit_report(request: Request):
     """
-    Compatibility endpoint for A2MCP / reviewer checks.
+    Public, low-latency endpoint for marketplace verification.
 
-    This endpoint currently returns a static baseline.
-
-    For production, connect this endpoint to the same
-    credit-report logic used by mcp_server.py.
+    The endpoint deliberately avoids RPC and database work so a remote
+    marketplace health check receives a deterministic response instead of
+    timing out. Detailed, on-chain reports remain available through the MCP
+    server once the caller provides the required context.
     """
+    payload: Dict[str, Any] = {}
+
+    if request.method == "POST":
+        try:
+            payload = await request.json()
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return Response(
+                content=json.dumps(
+                    {"error": "Request body must be valid JSON."}
+                ),
+                media_type="application/json",
+                status_code=400,
+            )
+
+    agent_id = str(payload.get("agent_id", "5993"))
+    wallet_address = payload.get("wallet_address")
+
     return {
         "status": "ok",
-        "message": (
-            "MCP Credit Report endpoint "
-            "is active and ready for "
-            "A2A/A2MCP integration."
-        ),
-        "agent_id": "5993",
-        "trust_score": 96,
-        "reliability": "High",
-        "a2mcp_compliant": True,
+        "service": "Truora credit report",
+        "agent_id": agent_id,
+        "wallet_address": wallet_address,
+        "capabilities": ["credit_report", "trust_summary"],
+        "message": "Service is reachable and ready to process a credit-report request.",
     }
 
 
@@ -1031,6 +1045,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "api_server:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True,
+        port=int(os.getenv("PORT", "8000")),
+        reload=os.getenv("ENVIRONMENT", "development") == "development",
     )

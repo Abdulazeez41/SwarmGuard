@@ -16,7 +16,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./swarmguard.db")
 
 
 def normalize_database_url(url: str) -> str:
@@ -30,21 +30,20 @@ def normalize_database_url(url: str) -> str:
     return url
 
 
-if not DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL environment variable is not configured. "
-        "Set DATABASE_URL before starting SwarmGuard."
-    )
-
-
 DATABASE_URL = normalize_database_url(DATABASE_URL)
 
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=300,
-)
+engine_options = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+}
+
+# SQLite is a safe local-development fallback. Hosted deployments should set
+# DATABASE_URL to their managed PostgreSQL connection string.
+if DATABASE_URL.startswith("sqlite"):
+    engine_options["connect_args"] = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, **engine_options)
 
 
 SessionLocal = sessionmaker(
