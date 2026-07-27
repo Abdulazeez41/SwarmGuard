@@ -9,16 +9,15 @@ import time
 from contextlib import asynccontextmanager
 from typing import Any
 
+from database import init_db
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
-from pydantic import BaseModel
-from web3 import Web3
-
-from database import init_db
 from marketplace_collector import MarketplaceDataCollector
+from pydantic import BaseModel
 from swarm_orchestrator import SwarmOrchestrator
 from swarm_repository import SwarmRepository
+from web3 import Web3
 
 # ============================================================
 # BLOCKCHAIN & MARKETPLACE CONFIGURATION
@@ -486,8 +485,7 @@ async def get_snapshot():
 @app.api_route("/api/credit-report", methods=["GET", "POST"])
 async def credit_report(request: Request):
     """
-    Public, dynamic endpoint for marketplace verification.
-    Generates a real AI Credit Report based on actual XLayer Mainnet data.
+    Generate an explainable AI Credit Report based on real evidence.
     """
     payload: dict[str, Any] = {}
     if request.method == "POST":
@@ -503,99 +501,53 @@ async def credit_report(request: Request):
     agent_identifier = str(
         payload.get("agent_id") or request.query_params.get("agent_id") or "5993"
     )
-    wallet_address = payload.get("wallet_address") or request.query_params.get(
-        "wallet_address"
-    )
-
-    agent_id = None
-    if agent_identifier.isdigit():
-        agent_id = agent_identifier
-        if agent_id in KNOWN_AGENT_IDS and not wallet_address:
-            wallet_address = DEMO_AGENT_WALLET
-    elif is_valid_evm_address(agent_identifier):
-        wallet_address = agent_identifier
-        agent_id = "UNKNOWN"
-
-    if not wallet_address or wallet_address == f"0x{'0' * 40}":
-        return {
-            "status": "error",
-            "message": f"Agent ID {agent_id} is not in the known demo registry. Please provide a valid 'wallet_address' parameter.",
-            "agent_id": agent_id,
-        }
 
     try:
-        # 1. Fetch Dynamic Blockchain Data
-        checksum_address = w3.to_checksum_address(wallet_address)
-        nonce = w3.eth.get_transaction_count(checksum_address)
-        balance_wei = w3.eth.get_balance(checksum_address)
-        balance_eth = float(w3.from_wei(balance_wei, "ether"))
+        marketplace_data = marketplace.get_agent_marketplace_data(agent_identifier)
 
-        # 2. Fetch Dynamic Marketplace Intelligence
-        marketplace_identifier = agent_id if agent_id else checksum_address
-        marketplace_data = marketplace.get_agent_marketplace_data(
-            marketplace_identifier
-        )
-        score_data = marketplace.calculate_transparent_scores(marketplace_data)
-        risk_factors = marketplace.generate_risk_factors(marketplace_data)
-        prediction = marketplace.predict_delivery_success(marketplace_data)
+        reputation = marketplace.analyze_reputation(marketplace_data)
+        behavioral = marketplace.analyze_behavioral_risk(marketplace_data)
+        specialization = marketplace.analyze_specialization(marketplace_data)
+        delivery = marketplace.analyze_delivery_confidence(marketplace_data)
+        risk_factors = marketplace.identify_risk_factors(marketplace_data)
+        positive_signals = marketplace.identify_positive_signals(marketplace_data)
+        recommendation = marketplace.generate_recommendation(marketplace_data)
 
-        total_score = score_data.get("total", 40)
-        confidence = score_data.get("confidence", "Low")
-
-        # Determine status and recommendation based on dynamic score
-        if total_score >= 80:
-            status = "Verified — established agent"
-            recommendation = "Highly Recommended"
-        elif total_score >= 60:
-            status = "Provisional — emerging agent"
-            recommendation = "Recommended with caution"
-        else:
-            status = "Provisional — new agent"
-            recommendation = "Recommended with caution"
-
-        # 3. Construct Dynamic Response
         return {
             "status": "ok",
             "report_type": "Truora AI Credit Report",
             "identity": {
-                "agent_id": agent_id or "N/A",
-                "network": "XLayer Mainnet"
-                if agent_id in ["5765", "5993"]
-                else "XLayer Testnet",
-                "wallet": checksum_address,
-            },
-            "assessment_status": status,
-            "trust_assessment": {
-                "overall_score": f"{total_score}/100",
-                "predicted_success_probability": f"{prediction.get('probability', 75)}%",
-                "confidence": f"{confidence} — {score_data.get('scores', {}).get('provisional_trust', 20)}%",
-                "recommendation": recommendation,
-            },
-            "evidence": {
-                "strengths": marketplace.generate_credit_events(marketplace_data)
-                + [f"Native balance: {balance_eth} XLayer native asset."],
-                "risks_and_missing_evidence": risk_factors
-                + (["No recorded blockchain transactions."] if nonce == 0 else []),
-            },
-            "decision": {
-                "summary": (
-                    f"Agent #{agent_id or 'UNKNOWN'} may be suitable for a low-risk, closely monitored trial assignment. "
-                    "Avoid relying on it for high-value or critical work until successful deliveries and independent quality evidence establish a stronger track record."
-                    if total_score < 80
-                    else "Agent has a proven track record and is suitable for high-value assignments."
+                "agent_id": agent_identifier,
+                "network": marketplace_data.get("onchain_activity", {}).get(
+                    "network", "Unknown"
                 ),
-                "disclaimer": f"The {total_score}/100 score is {'provisional, not evidence of mature reliability.' if total_score < 80 else 'based on verified on-chain and marketplace activity.'}",
+                "wallet": marketplace_data.get("onchain_activity", {}).get(
+                    "wallet_address", "Unknown"
+                ),
             },
-            "blockchain_activity": {
-                "transaction_count": nonce,
-                "native_balance": balance_eth,
+            "assessment": {
+                "maturity": reputation.get("status", "Unknown"),
+                "evidence_quality": marketplace_data.get("evidence_quality", {}).get(
+                    "quality", "Low"
+                ),
+                "overall_confidence": marketplace_data.get("evidence_quality", {}).get(
+                    "confidence", "Low"
+                ),
             },
-            "message": f"Dynamic credit report generated successfully for agent {agent_identifier}.",
+            "reputation": reputation,
+            "behavioral_risk": behavioral,
+            "specialization": specialization,
+            "delivery_confidence": delivery,
+            "onchain_activity": marketplace_data.get("onchain_activity", {}),
+            "risk_factors": risk_factors,
+            "positive_signals": positive_signals,
+            "recommendation": recommendation,
+            "message": f"Explainable credit report generated for agent {agent_identifier}.",
         }
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         return {
             "status": "error",
-            "message": f"Failed to generate dynamic credit report: {e!s}",
+            "message": f"Failed to generate credit report: {str(e)}",
             "agent_id": agent_identifier,
         }
 
