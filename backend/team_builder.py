@@ -618,7 +618,7 @@ class TeamBuilder:
                 return result
 
         # =====================================================
-        # MOCK FALLBACK (FOR LOCAL DEV / UI TESTING)
+        # MOCK FALLBACK
         # =====================================================
 
         print(
@@ -629,9 +629,9 @@ class TeamBuilder:
         base_rate = self.role_keywords.get(role, {}).get("base_rate", 150)
 
         return {
-            "agent_id": f"mock-{role}",
-            "name": f"Mock {role.replace('_', ' ').title()}",
-            "specialization": role.replace("_", " ").title(),
+            "agent_id": role,
+            "name": role,
+            "specialization": role,
             "hourly_rate_usd": base_rate,
             "availability": "immediate",
             "trust_score": 95,
