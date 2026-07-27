@@ -485,45 +485,95 @@ async def get_snapshot():
 @app.api_route("/api/credit-report", methods=["GET", "POST"])
 async def credit_report(request: Request):
     """
-    Generate an explainable AI Credit Report based on real evidence.
+    Generate an explainable AI Credit Report based on available evidence.
+
+    The caller must provide either:
+    - agent_id
+    - wallet_address
+    - or both
     """
+
     payload: dict[str, Any] = {}
+
     if request.method == "POST":
         try:
             payload = await request.json()
+            if not isinstance(payload, dict):
+                return {
+                    "status": "error",
+                    "error": "invalid_request",
+                    "message": "Request body must be a JSON object.",
+                }
         except (TypeError, ValueError, json.JSONDecodeError):
             return Response(
-                content=json.dumps({"error": "Request body must be valid JSON."}),
+                content=json.dumps(
+                    {
+                        "status": "error",
+                        "error": "invalid_json",
+                        "message": "Request body must be valid JSON.",
+                    }
+                ),
                 media_type="application/json",
                 status_code=400,
             )
 
-    agent_identifier = str(
-        payload.get("agent_id") or request.query_params.get("agent_id") or "5993"
+    agent_identifier = payload.get("agent_id") or request.query_params.get("agent_id")
+
+    wallet_address = payload.get("wallet_address") or request.query_params.get(
+        "wallet_address"
     )
 
+    if not agent_identifier and not wallet_address:
+        return {
+            "status": "error",
+            "error": "missing_target",
+            "message": (
+                "Please provide an agent_id or wallet_address "
+                "to generate a credit report."
+            ),
+        }
+
+    agent_identifier = str(agent_identifier).strip() if agent_identifier else None
+
+    wallet_address = str(wallet_address).strip() if wallet_address else None
+
     try:
-        marketplace_data = marketplace.get_agent_marketplace_data(agent_identifier)
+        marketplace_data = marketplace.get_agent_marketplace_data(
+            agent_id=agent_identifier,
+            wallet_address=wallet_address,
+        )
 
         reputation = marketplace.analyze_reputation(marketplace_data)
+
         behavioral = marketplace.analyze_behavioral_risk(marketplace_data)
+
         specialization = marketplace.analyze_specialization(marketplace_data)
+
         delivery = marketplace.analyze_delivery_confidence(marketplace_data)
+
         risk_factors = marketplace.identify_risk_factors(marketplace_data)
+
         positive_signals = marketplace.identify_positive_signals(marketplace_data)
+
         recommendation = marketplace.generate_recommendation(marketplace_data)
+
+        onchain = marketplace_data.get("onchain_activity", {})
+
+        profile = marketplace_data.get("profile", {})
+
+        resolved_wallet = (
+            onchain.get("wallet_address")
+            or profile.get("agentWalletAddress")
+            or wallet_address
+        )
 
         return {
             "status": "ok",
             "report_type": "Truora AI Credit Report",
             "identity": {
                 "agent_id": agent_identifier,
-                "network": marketplace_data.get("onchain_activity", {}).get(
-                    "network", "Unknown"
-                ),
-                "wallet": marketplace_data.get("onchain_activity", {}).get(
-                    "wallet_address", "Unknown"
-                ),
+                "network": onchain.get("network", "Unknown"),
+                "wallet": resolved_wallet or "Unknown",
             },
             "assessment": {
                 "maturity": reputation.get("status", "Unknown"),
@@ -538,16 +588,17 @@ async def credit_report(request: Request):
             "behavioral_risk": behavioral,
             "specialization": specialization,
             "delivery_confidence": delivery,
-            "onchain_activity": marketplace_data.get("onchain_activity", {}),
+            "onchain_activity": onchain,
             "risk_factors": risk_factors,
             "positive_signals": positive_signals,
             "recommendation": recommendation,
-            "message": f"Explainable credit report generated for agent {agent_identifier}.",
+            "message": ("Explainable credit report generated successfully."),
         }
+
     except Exception as e:
         return {
             "status": "error",
-            "message": f"Failed to generate credit report: {str(e)}",
+            "message": (f"Failed to generate credit report: {str(e)}"),
             "agent_id": agent_identifier,
         }
 

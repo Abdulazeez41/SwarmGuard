@@ -20,7 +20,11 @@ class MarketplaceDataCollector:
     # REAL DATA COLLECTION
     # ============================================================
 
-    def get_agent_marketplace_data(self, agent_id: str) -> dict:
+    def get_agent_marketplace_data(
+        self,
+        agent_id: str,
+        wallet_address: str | None = None,
+    ) -> dict:
         """
         Collects REAL data from multiple sources:
         1. Agent profile from OKX marketplace
@@ -35,7 +39,14 @@ class MarketplaceDataCollector:
         tasks = self._get_agent_tasks(agent_id)
         reviews = self._get_agent_reviews(agent_id)
         disputes = self._get_agent_disputes(agent_id)
-        onchain = self._get_onchain_activity(profile.get("wallet_address"))
+        resolved_wallet = (
+            wallet_address
+            or profile.get("agentWalletAddress")
+            or profile.get("wallet_address")
+            or profile.get("ownerAddress")
+        )
+
+        onchain = self._get_onchain_activity(resolved_wallet)
 
         return {
             "agent_id": agent_id,
