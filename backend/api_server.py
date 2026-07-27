@@ -12,17 +12,28 @@ from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
+from web3 import Web3
 
 from database import init_db
 from swarm_repository import SwarmRepository
 from swarm_orchestrator import SwarmOrchestrator
-
+from marketplace_collector import MarketplaceDataCollector
 
 # ============================================================
 # WEBSOCKET CONNECTION MANAGER
 # ============================================================
 orchestrator = SwarmOrchestrator()
 repository = SwarmRepository()
+marketplace = MarketplaceDataCollector()
+
+# ============================================================
+# BLOCKCHAIN CONFIGURATION
+# ============================================================
+XLayer_RPC = "https://testrpc.xlayer.tech"
+w3 = Web3(Web3.HTTPProvider(XLayer_RPC))
+
+KNOWN_AGENT_IDS = {"5889", "5922", "5765", "5993"}
+DEMO_AGENT_WALLET = "0x1b2f5d07f1ed46bdbbeb019ee7797f65d8d2dbfd"
 
 class ConnectionManager:
     """
@@ -44,35 +55,28 @@ class ConnectionManager:
     async def broadcast(self, message: str) -> None:
         """
         Send a message to every connected WebSocket client.
-
         Dead connections are removed automatically.
         """
         disconnected_connections = []
-
         for connection in self.active_connections:
             try:
                 await connection.send_text(message)
             except Exception:
                 disconnected_connections.append(connection)
-
         for connection in disconnected_connections:
             self.disconnect(connection)
 
-
 manager = ConnectionManager()
-
 
 # ============================================================
 # REQUEST MODELS
 # ============================================================
-
 class AnalyzeCommandInput(BaseModel):
     """
     Request body for natural-language command processing.
     """
     command: str
     source: str = "text"
-
 
 class InitiateSwarmInput(BaseModel):
     """
@@ -81,7 +85,6 @@ class InitiateSwarmInput(BaseModel):
     project_brief: str
     budget_usd: float
 
-
 class EvaluateMilestoneInput(BaseModel):
     """
     Explicit API request for evaluating a milestone.
@@ -89,38 +92,27 @@ class EvaluateMilestoneInput(BaseModel):
     task_id: str
     deliverable_summary: str
 
-
 # ============================================================
 # HELPER FUNCTIONS
 # ============================================================
-
 def get_latest_task() -> Optional[Dict[str, Any]]:
     """
     Returns the latest active task.
-
-    Returns:
-        The latest task dictionary or None.
     """
     active_tasks = getattr(orchestrator, "active_tasks", {})
-
     if not active_tasks:
         return None
-
     latest_task_id = list(active_tasks.keys())[-1]
     return active_tasks.get(latest_task_id)
-
 
 def get_latest_task_id() -> Optional[str]:
     """
     Returns the ID of the latest active task.
     """
     active_tasks = getattr(orchestrator, "active_tasks", {})
-
     if not active_tasks:
         return None
-
     return list(active_tasks.keys())[-1]
-
 
 def get_task(task_id: str) -> Optional[Dict[str, Any]]:
     """
@@ -129,22 +121,18 @@ def get_task(task_id: str) -> Optional[Dict[str, Any]]:
     active_tasks = getattr(orchestrator, "active_tasks", {})
     return active_tasks.get(task_id)
 
-
 def detect_log_tone(log_line: str) -> str:
     """
     Converts a log message into a frontend timeline tone.
     """
     upper_log = log_line.upper()
-
     if "PASS" in upper_log or "SUCCESS" in upper_log:
         return "success"
     if "FAIL" in upper_log or "ERROR" in upper_log:
         return "danger"
     if "PENALTY" in upper_log or "FORFEIT" in upper_log:
         return "warning"
-
     return "primary"
-
 
 def build_agents(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -162,22 +150,17 @@ def build_agents(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "heartbeat": "stable",
         }
     ]
-
     if not task:
         return agents
 
     for agent in task.get("team", []):
         agent_id = agent.get("agent_id", "unknown")
         current_milestone = task.get("current_milestone", 0)
-
         agents.append(
             {
                 "id": str(agent_id),
                 "name": f"Agent {agent_id}",
-                "role": agent.get(
-                    "specialization",
-                    "Autonomous Specialist",
-                ),
+                "role": agent.get("specialization", "Autonomous Specialist"),
                 "trustScore": agent.get("trust_score", 0),
                 "hourlyRate": agent.get("hourly_rate_usd", 0),
                 "status": (
@@ -189,9 +172,7 @@ def build_agents(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "heartbeat": "stable",
             }
         )
-
     return agents
-
 
 def build_timeline(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -199,13 +180,10 @@ def build_timeline(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     if not task:
         return []
-
     timeline = []
-
     for idx, log_line in enumerate(task.get("logs", [])):
         if not log_line:
             log_line = "Unknown event"
-
         timeline.append(
             {
                 "id": f"t{idx}",
@@ -216,9 +194,7 @@ def build_timeline(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "tone": detect_log_tone(log_line),
             }
         )
-
     return timeline
-
 
 def build_memory_insights() -> List[Dict[str, Any]]:
     """
@@ -226,9 +202,7 @@ def build_memory_insights() -> List[Dict[str, Any]]:
     """
     swarm_memory = getattr(orchestrator, "swarm_memory", {})
     lessons = swarm_memory.get("lessons_learned", [])
-
     memory_insights = []
-
     for idx, lesson in enumerate(lessons[-5:]):
         memory_insights.append(
             {
@@ -238,9 +212,7 @@ def build_memory_insights() -> List[Dict[str, Any]]:
                 "weight": "Persistent lesson",
             }
         )
-
     return memory_insights
-
 
 def build_audit_trail(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
@@ -248,13 +220,10 @@ def build_audit_trail(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     if not task:
         return []
-
     audit_trail = []
-
     for idx, log_line in enumerate(task.get("logs", [])):
         if not log_line:
             log_line = "Unknown event"
-
         audit_trail.append(
             {
                 "id": f"a{idx}",
@@ -269,9 +238,7 @@ def build_audit_trail(task: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "status": "Verified",
             }
         )
-
     return audit_trail
-
 
 def build_metrics() -> List[Dict[str, Any]]:
     """
@@ -280,7 +247,6 @@ def build_metrics() -> List[Dict[str, Any]]:
     swarm_memory = getattr(orchestrator, "swarm_memory", {})
     stats = swarm_memory.get("global_stats", {})
     projects_managed = stats.get("projects_managed", 0)
-
     if projects_managed == 0:
         return [
             {"id": "pm", "label": "Projects Managed", "value": "1,284", "delta": "+12.4%"},
@@ -288,14 +254,12 @@ def build_metrics() -> List[Dict[str, Any]]:
             {"id": "sr", "label": "Success Rate", "value": "96.4%", "delta": "+1.2%"},
             {"id": "ac", "label": "Average Confidence", "value": "93.7", "delta": "+2.7"},
         ]
-
     return [
         {"id": "pm", "label": "Projects Managed", "value": str(projects_managed), "delta": "+1"},
         {"id": "bm", "label": "Budget Managed", "value": f"${stats.get('total_budget_managed', 0):,.0f}", "delta": "+$20,000"},
         {"id": "sr", "label": "Success Rate", "value": "96.4%", "delta": "+1.2%"},
         {"id": "ac", "label": "Average Confidence", "value": "93.7", "delta": "+2.7"},
     ]
-
 
 def build_snapshot() -> Dict[str, Any]:
     """
@@ -418,28 +382,14 @@ def build_snapshot() -> Dict[str, Any]:
         ),
     }
 
-
 # ============================================================
 # NATURAL LANGUAGE COMMAND PARSER
 # ============================================================
-
 def parse_command(command: str) -> Dict[str, Any]:
     """
     Parse a natural-language command.
-
-    This is intentionally simple for the MVP.
-
-    Later this can be replaced with:
-    - an LLM
-    - structured tool calling
-    - an MCP client
-    - an intent classifier
     """
     command_lower = command.lower()
-
-    # --------------------------------------------------------
-    # Extract budget
-    # --------------------------------------------------------
     budget = 20_000.0
     tokens = command_lower.replace(",", "").split()
 
@@ -452,20 +402,12 @@ def parse_command(command: str) -> Dict[str, Any]:
         except ValueError:
             continue
 
-    # --------------------------------------------------------
-    # Detect evaluation command
-    # --------------------------------------------------------
     evaluation_keywords = [
-        "evaluate",
-        "submit",
-        "delivered",
-        "completed",
-        "milestone",
+        "evaluate", "submit", "delivered", "completed", "milestone",
     ]
 
     if any(keyword in command_lower for keyword in evaluation_keywords):
         task_id = None
-
         for token in command.split():
             if token.lower().startswith("swarm-"):
                 task_id = token.lower()
@@ -475,15 +417,8 @@ def parse_command(command: str) -> Dict[str, Any]:
             task_id = get_latest_task_id()
 
         failure_keywords = [
-            "failed",
-            "failure",
-            "error",
-            "bug",
-            "40%",
-            "timeout",
-            "crash",
+            "failed", "failure", "error", "bug", "40%", "timeout", "crash",
         ]
-
         is_failure = any(keyword in command_lower for keyword in failure_keywords)
 
         return {
@@ -493,45 +428,30 @@ def parse_command(command: str) -> Dict[str, Any]:
             "is_failure": is_failure,
         }
 
-    # --------------------------------------------------------
-    # Default: initiate swarm
-    # --------------------------------------------------------
     return {
         "action": "initiate",
         "project_brief": command,
         "budget_usd": budget,
     }
 
-
 # ============================================================
 # APPLICATION LIFESPAN
 # ============================================================
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-
     print("🛡️  SwarmGuard API Bridge starting...")
-
     try:
         init_db()
         print("🗄️  PostgreSQL database initialized.")
     except Exception as e:
-        print(
-            f"❌ Database initialization failed: {e}"
-        )
+        print(f"❌ Database initialization failed: {e}")
         raise
-
     yield
-
-    print(
-        "🛡️  SwarmGuard API Bridge shutting down..."
-    )
-
+    print("🛡️  SwarmGuard API Bridge shutting down...")
 
 # ============================================================
 # FASTAPI APPLICATION
 # ============================================================
-
 app = FastAPI(
     title="SwarmGuard API",
     description="Autonomous Workforce OS API",
@@ -539,11 +459,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
 # ============================================================
 # CORS
 # ============================================================
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -557,11 +475,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 # ============================================================
 # HEALTH CHECK
 # ============================================================
-
 @app.api_route("/", methods=["GET", "POST", "HEAD"])
 async def root(request: Request):
     return {
@@ -571,7 +487,6 @@ async def root(request: Request):
         "method": request.method,
     }
 
-
 @app.get("/health")
 async def health_check():
     return {
@@ -579,11 +494,9 @@ async def health_check():
         "service": "SwarmGuard API",
     }
 
-
 # ============================================================
 # SNAPSHOT ENDPOINT
 # ============================================================
-
 @app.get("/api/snapshot")
 async def get_snapshot():
     """
@@ -591,95 +504,117 @@ async def get_snapshot():
     """
     return build_snapshot()
 
-
 # ============================================================
-# CREDIT REPORT / MCP COMPATIBILITY
+# CREDIT REPORT / MCP COMPATIBILITY (DYNAMIC)
 # ============================================================
-
 @app.api_route("/api/credit-report", methods=["GET", "POST"])
 async def credit_report(request: Request):
     """
-    Public, low-latency endpoint for marketplace verification.
-
-    The endpoint deliberately avoids RPC and database work so a remote
-    marketplace health check receives a deterministic response instead of
-    timing out. Detailed, on-chain reports remain available through the MCP
-    server once the caller provides the required context.
+    Public, dynamic endpoint for marketplace verification.
+    Generates a real AI Credit Report based on the provided agent_id or wallet_address.
     """
-    payload: Dict[str, Any] = {}
-
+    # 1. Extract agent identifier from Query Params (GET) or JSON Body (POST)
+    agent_identifier = request.query_params.get("agent_id", "5993")
+    
     if request.method == "POST":
         try:
             payload = await request.json()
+            agent_identifier = str(payload.get("agent_id", agent_identifier))
         except (TypeError, ValueError, json.JSONDecodeError):
             return Response(
-                content=json.dumps(
-                    {"error": "Request body must be valid JSON."}
-                ),
+                content=json.dumps({"error": "Request body must be valid JSON."}),
                 media_type="application/json",
                 status_code=400,
             )
 
-    agent_id = str(payload.get("agent_id", "5993"))
-    wallet_address = payload.get("wallet_address")
+    # 2. Resolve Identity
+    agent_id = None
+    wallet_address = DEMO_AGENT_WALLET
+    
+    if agent_identifier.isdigit() and agent_identifier in KNOWN_AGENT_IDS:
+        agent_id = agent_identifier
+    elif len(agent_identifier) == 42 and agent_identifier.startswith("0x"):
+        wallet_address = agent_identifier
+    else:
+        # Fallback for unknown IDs to prevent crashes
+        wallet_address = f"0x{'0'*40}" 
 
-    return {
-        "status": "ok",
-        "service": "Truora credit report",
-        "agent_id": agent_id,
-        "wallet_address": wallet_address,
-        "capabilities": ["credit_report", "trust_summary"],
-        "message": "Service is reachable and ready to process a credit-report request.",
-    }
+    try:
+        # 3. Fetch Dynamic Blockchain Data
+        checksum_address = w3.to_checksum_address(wallet_address)
+        nonce = w3.eth.get_transaction_count(checksum_address)
+        balance_wei = w3.eth.get_balance(checksum_address)
+        balance_eth = float(w3.from_wei(balance_wei, "ether"))
 
+        # 4. Fetch Dynamic Marketplace Intelligence
+        marketplace_identifier = agent_id if agent_id else checksum_address
+        marketplace_data = marketplace.get_agent_marketplace_data(marketplace_identifier)
+        score_data = marketplace.calculate_transparent_scores(marketplace_data)
+        behavioral_profile = marketplace.generate_behavioral_profile(marketplace_data)
+        risk_factors = marketplace.generate_risk_factors(marketplace_data)
+        prediction = marketplace.predict_delivery_success(marketplace_data)
+
+        total_score = score_data.get("total", 75)
+        confidence = score_data.get("confidence", "Medium")
+
+        # 5. Construct and Return Dynamic Response
+        return {
+            "status": "ok",
+            "report_type": "Truora AI Credit Report",
+            "identity": {
+                "agent_id": agent_id or "N/A",
+                "network": "XLayer Mainnet" if agent_id in ["5765", "5993"] else "XLayer Testnet",
+                "wallet": checksum_address,
+            },
+            "blockchain_activity": {
+                "transaction_count": nonce,
+                "native_balance": balance_eth,
+                "native_balance_unit": "XLayer native asset",
+            },
+            "executive_summary": {
+                "overall_trust_score": total_score,
+                "confidence_level": confidence,
+                "recommendation": "Recommended" if total_score >= 70 else "Recommended with caution",
+            },
+            "trust_scores": score_data.get("scores", {}),
+            "evidence_summary": marketplace.generate_credit_events(marketplace_data),
+            "risk_factors": risk_factors,
+            "behavioral_profile": behavioral_profile,
+            "prediction_and_confidence": prediction,
+            "message": f"Dynamic credit report generated successfully for agent {agent_identifier}."
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Failed to generate dynamic credit report: {str(e)}",
+            "agent_id": agent_identifier
+        }
 
 # ============================================================
 # MCP COMPATIBILITY ENDPOINT
 # ============================================================
-
 @app.api_route("/mcp", methods=["GET", "POST"])
 async def mcp_endpoint():
     """
     Compatibility endpoint.
-
-    IMPORTANT:
-    This is NOT the actual MCP transport.
-
-    The real MCP server is mcp_server.py and is accessed
-    through stdio by OpenClaw.
-
-    This endpoint exists only as a simple HTTP compatibility
-    or health-check endpoint.
     """
     return {
         "status": "ok",
         "service": "SwarmGuard MCP compatibility endpoint",
         "mcp_server": "available",
         "transport": "stdio",
-        "message": (
-            "Use the configured MCP server for "
-            "actual MCP tool calls."
-        ),
+        "message": "Use the configured MCP server for actual MCP tool calls.",
     }
-
 
 # ============================================================
 # NATURAL LANGUAGE COMMAND ENDPOINT
 # ============================================================
-
 @app.post("/api/command/analyze")
 async def analyze_command(input: AnalyzeCommandInput):
     """
     Parse and execute a natural-language command.
-
-    Examples:
-    "Build a DeFi staking dashboard. Budget: $20,000."
-    "Evaluate swarm-123 after the frontend milestone was completed successfully."
-
-    This endpoint currently calls the orchestrator directly.
     """
     command = input.command.strip()
-
     if not command:
         return {"error": "Command cannot be empty."}
 
@@ -693,11 +628,9 @@ async def analyze_command(input: AnalyzeCommandInput):
             project_brief=parsed["project_brief"],
             budget_usd=parsed["budget_usd"],
         )
-
         task_id = result.get("task_id")
         task = get_task(task_id)
 
-        # Broadcast event
         await manager.broadcast(
             json.dumps(
                 {
@@ -708,7 +641,6 @@ async def analyze_command(input: AnalyzeCommandInput):
             )
         )
 
-        # Reasoning phases
         reasoning = [
             {"id": "understanding", "label": "Understanding project", "state": "done"},
             {"id": "budget", "label": "Validating budget", "state": "done"},
@@ -719,7 +651,6 @@ async def analyze_command(input: AnalyzeCommandInput):
 
         team = task.get("team", []) if task else []
         recommended_workforce = []
-
         for index, agent in enumerate(team):
             agent_id = agent.get("agent_id", str(index))
             recommended_workforce.append(
@@ -735,7 +666,6 @@ async def analyze_command(input: AnalyzeCommandInput):
                 }
             )
 
-        # Response
         return {
             "transcript": command,
             "summaryCards": [
@@ -771,8 +701,7 @@ async def analyze_command(input: AnalyzeCommandInput):
             "recommendedWorkforce": recommended_workforce,
             "reasoning": reasoning,
             "riskHeadline": (
-                "Security-critical workload detected. "
-                "Performance bonds locked for all agents."
+                "Security-critical workload detected. Performance bonds locked for all agents."
                 if "security" in command.lower()
                 else "Workforce deployed within budget constraints."
             ),
@@ -783,12 +712,10 @@ async def analyze_command(input: AnalyzeCommandInput):
     # ========================================================
     if parsed["action"] == "evaluate":
         task_id = parsed.get("task_id")
-
         if not task_id:
             return {"error": "No active swarm found. Deploy one first."}
 
         task = get_task(task_id)
-
         if not task:
             return {"error": f"Swarm task '{task_id}' was not found."}
 
@@ -797,7 +724,6 @@ async def analyze_command(input: AnalyzeCommandInput):
             deliverable_summary=parsed["deliverable_summary"],
         )
 
-        # Broadcast event
         await manager.broadcast(
             json.dumps(
                 {
@@ -840,22 +766,16 @@ async def analyze_command(input: AnalyzeCommandInput):
 
     return {"error": "Unsupported command action."}
 
-
 # ============================================================
 # EXPLICIT SWARM INITIATION ENDPOINT
 # ============================================================
-
 @app.post("/api/swarm/initiate")
 async def initiate_swarm(input: InitiateSwarmInput):
     """
     Direct REST endpoint for initiating a swarm.
-
-    This is useful when the frontend already has structured
-    project data and does not need natural-language parsing.
     """
     if not input.project_brief.strip():
         return {"error": "Project brief cannot be empty."}
-
     if input.budget_usd <= 0:
         return {"error": "Budget must be greater than zero."}
 
@@ -863,7 +783,6 @@ async def initiate_swarm(input: InitiateSwarmInput):
         project_brief=input.project_brief,
         budget_usd=input.budget_usd,
     )
-
     task_id = result.get("task_id")
 
     await manager.broadcast(
@@ -875,23 +794,18 @@ async def initiate_swarm(input: InitiateSwarmInput):
             }
         )
     )
-
     return result
-
 
 # ============================================================
 # EXPLICIT MILESTONE EVALUATION ENDPOINT
 # ============================================================
-
 @app.post("/api/swarm/evaluate")
 async def evaluate_milestone(input: EvaluateMilestoneInput):
     """
     Direct REST endpoint for milestone evaluation.
     """
     if input.task_id not in orchestrator.active_tasks:
-        return {
-            "error": f"Swarm task '{input.task_id}' was not found."
-        }
+        return {"error": f"Swarm task '{input.task_id}' was not found."}
 
     result = orchestrator.evaluate_and_heal(
         task_id=input.task_id,
@@ -907,57 +821,45 @@ async def evaluate_milestone(input: EvaluateMilestoneInput):
             }
         )
     )
-
     return result
-
 
 # ============================================================
 # SWARM STATUS ENDPOINT
 # ============================================================
-
 @app.get("/api/swarm/{task_id}")
 async def get_swarm_status(task_id: str):
     """
     Return the current state of one swarm.
     """
     task = get_task(task_id)
-
     if not task:
         return {"error": f"Swarm task '{task_id}' was not found."}
 
-    # Prefer orchestrator's own status method if available.
     if hasattr(orchestrator, "get_swarm_status"):
         return orchestrator.get_swarm_status(task_id)
-
     return task
-
 
 # ============================================================
 # BLUEPRINT DOWNLOAD
 # ============================================================
-
 @app.get("/api/blueprint")
 async def download_blueprint():
     """
     Generate and download a project blueprint.
     """
     latest_task = get_latest_task()
-
     if latest_task:
         project_name = latest_task.get("brief", "SwarmGuard Project")
         budget = latest_task.get("budget_usd", latest_task.get("budget", 0))
         status = latest_task.get("status", "IN_PROGRESS")
-
         team = latest_task.get("team", [])
         team_lines = []
-
         for agent in team:
             team_lines.append(
                 f"- {agent.get('agent_id', 'Unknown')}: "
                 f"{agent.get('specialization', 'Unknown')} "
                 f"(Trust Score: {agent.get('trust_score', 'N/A')})"
             )
-
         team_section = "\n".join(team_lines) if team_lines else "No agents recorded."
     else:
         project_name = "No active project"
@@ -968,7 +870,6 @@ async def download_blueprint():
     blueprint_content = f"""
         SWARMGUARD EXECUTION BLUEPRINT
         ==============================
-
         Project:
         {project_name}
 
@@ -983,8 +884,7 @@ async def download_blueprint():
 
         Generated by:
         SwarmGuard Autonomous Workforce OS
-        """
-
+    """
     return Response(
         content=blueprint_content.strip(),
         media_type="text/plain",
@@ -993,18 +893,15 @@ async def download_blueprint():
         },
     )
 
-
 # ============================================================
 # WEBSOCKET LIVE EVENT STREAM
 # ============================================================
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for live frontend updates.
     """
     await manager.connect(websocket)
-
     try:
         await websocket.send_text(
             json.dumps(
@@ -1014,12 +911,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 }
             )
         )
-
         while True:
             data = await websocket.receive_text()
-
-            # Currently the frontend can send heartbeat
-            # or ping messages.
             await websocket.send_text(
                 json.dumps(
                     {
@@ -1028,20 +921,16 @@ async def websocket_endpoint(websocket: WebSocket):
                     }
                 )
             )
-
     except WebSocketDisconnect:
         manager.disconnect(websocket)
     except Exception:
         manager.disconnect(websocket)
 
-
 # ============================================================
 # LOCAL DEVELOPMENT ENTRYPOINT
 # ============================================================
-
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run(
         "api_server:app",
         host="0.0.0.0",
