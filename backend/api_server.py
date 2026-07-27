@@ -569,7 +569,7 @@ async def credit_report(request: Request):
 
         return {
             "status": "ok",
-            "report_type": "Truora AI Credit Report",
+            "report_type": "Truora Intelligence Credit Report",
             "identity": {
                 "agent_id": agent_identifier,
                 "network": onchain.get("network", "Unknown"),
